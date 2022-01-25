@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "target": "ESNext",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "removeComments": true,
+    //"allowJs": true
+    "esModuleInterop": true,
+    //"allowSyntheticDefaultImports": true,
+    //"skipLibCheck": true,
+    //"skipDefaultLibCheck": true
+  },
+  "include": ["./src"]
+}
