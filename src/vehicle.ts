@@ -105,6 +105,9 @@ export default class Vehicle extends EventEmitter {
       //const latMetric = new Metric({id:"gps_lat"});
       //const lonMetric = new Metric({id:"gps_lon"});
 
+      this.registerMetric(lockedMetric);
+      this.registerMetric(distanceMetric);
+
       let connected = await this.gpsManager.connect(this.app.config.gps.port);
       if (connected) {
         this.gpsManager.on("lock", (locked: boolean) => {

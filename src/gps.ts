@@ -64,23 +64,25 @@ export default class GpsManager extends EventEmitter {
     if (!this.locked) return;
     if (lat == this.lastLat && lon == this.lastLon) return;
 
-    let distance = GPS.Distance(
-      this.lastLat, 
-      this.lastLon,
-      lat,
-      lon
-    ) * 1000; // convert from km to m
-    
-    // Round to max of 2 decimal places
-    distance = Math.round((distance + Number.EPSILON) * 100) / 100;
+    if (this.lastLat != null && this.lastLon != null) {
+      let distance = GPS.Distance(
+        this.lastLat, 
+        this.lastLon,
+        lat,
+        lon
+      ) * 1000; // convert from km to m
+      
+      // Round to max of 2 decimal places
+      distance = Math.round((distance + Number.EPSILON) * 100) / 100;
 
-    logger.info("gps", `Moved ${distance}m`);
+      logger.info("gps", `Moved ${distance}m`);
 
-    // to try and correct for gps wandering and glitching.
-    // this isn't a very good way of doing it, it should probably be changed.
-    if (distance <= 0.3 || distance >= 1000) return;
+      // to try and correct for gps wandering and glitching.
+      // this isn't a very good way of doing it, it should probably be changed.
+      if (distance <= 0.3 || distance >= 1000) return;
 
-    this.emit("move", lat, lon, distance);
+      this.emit("move", lat, lon, distance);
+    }
 
     this.lastLat = lat;
     this.lastLon = lon;
