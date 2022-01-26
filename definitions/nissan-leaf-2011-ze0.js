@@ -1,3 +1,6 @@
+const whPerGid = 80;
+const kmPerKwh = 6.5; // original = 7.1
+
 module.exports = {
   name: 'Nissan Leaf 2011 (ZE0)',
   /*
@@ -46,6 +49,22 @@ module.exports = {
           id: 'soh',
           suffix: '%',
           process: (data) => (data[4] & 0xFE) >> 1 
+        },
+        {
+          id: 'range',
+          suffix: 'km',
+          process: (data, metrics) => {
+            // Range Calculation (roughly 81km for 171 gids)
+            // - Division is to convert Wh to kWh
+            // - Minus 1.15kWh is reserved energy that cannot be used.
+            const gids = metrics.get('soc_gids').value;
+            
+            let kWh = ((gids*whPerGid)/1000.0)-1.15;
+            if (kWh < 0) kWh = 0;
+
+            let range = kWh*kmPerKwh;
+            return Math.round(range);
+          }
         }
       ]
     },
@@ -125,7 +144,7 @@ module.exports = {
         {
           id: 'rear_speed',
           suffix: ' km/h',
-          precision: 2,
+          precision: 1,
           //log: true,
           rateLimit: 80,
           // Increased division from 100 to 101 to decrease speed a bit.

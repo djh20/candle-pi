@@ -1,3 +1,5 @@
+import Metric from "./metric";
+
 /**
  * The structure of a vehicle definition file.
  */
@@ -43,7 +45,7 @@ export interface MetricDefinition {
    * This method takes in a CAN message buffer and returns the corresponding 
    * value.
    */
-  process?: (data: Buffer) => number,
+  process?: (data: Buffer, metrics: Map<string, Metric>) => number,
 
   /**
    * If the metric should be logged to the console whenever its value changes.

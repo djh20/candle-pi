@@ -52,7 +52,6 @@ export default class Vehicle extends EventEmitter {
       }
 
       // Send metric data through websocket.
-      //const data = [index, value];
       this.emit("data", metric.data);
     });
 
@@ -65,7 +64,7 @@ export default class Vehicle extends EventEmitter {
 
     topicDef.metrics.forEach(metricDef => {
       const metric = this.metrics.get(metricDef.id);
-      metric.setValue( metricDef.process(frame.data) );
+      metric.setValue( metricDef.process(frame.data, this.metrics) );
       //logger.info("can", `${metricDef.id}: ${metric.value}`);
       //metric.instance.setValue( metric.process(frame.data) );
     });
