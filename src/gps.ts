@@ -74,11 +74,16 @@ export default class GpsManager extends EventEmitter {
     // Round to max of 2 decimal places
     distance = Math.round((distance + Number.EPSILON) * 100) / 100;
 
+    logger.info("gps", `Moved ${distance}m`);
+
     // to try and correct for gps wandering and glitching.
     // this isn't a very good way of doing it, it should probably be changed.
     if (distance <= 0.3 || distance >= 1000) return;
 
     this.emit("move", lat, lon, distance);
+
+    this.lastLat = lat;
+    this.lastLon = lon;
   }
 }
 
