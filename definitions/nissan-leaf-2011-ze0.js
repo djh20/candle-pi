@@ -3,21 +3,17 @@ const kmPerKwh = 6.5; // original = 7.1
 
 module.exports = {
   name: 'Nissan Leaf 2011 (ZE0)',
-  /*
   getInfo: (metrics) => {
     // This function is called by the application periodically to get information about the vehicle.
 
     // Currently, the application only calls this to see if you're moving (for the gps).
     // If you're not using a gps or don't have this information, you should just return {moving:true}.
+    const speed = metrics.get('rear_speed');
 
-    let info = {};
-
-    let speed = metrics.get('rear_speed');
-    info.moving = speed && speed.value > 0 ? true : false;
-
-    return info;
+    return {
+      moving: speed && speed.value > 0 ? true : false
+    };
   },
-  */
   topics: [
     {
       id: 0x11a,
@@ -118,9 +114,16 @@ module.exports = {
         {
           //id: 9,
           id: 'charging',
-          process: (data) => {
-            let val = (data[6] & 0xE0);
-            return val == 192 || val == 224 ? 1 : 0
+          process: (data, metrics) => {
+            const val = (data[6] & 0xE0);
+            const charging = val == 192 || val == 224 ? 1 : 0;
+
+            if (charging) {
+              const tripDistance = metrics.get('gps_trip_distance');
+              if (tripDistance) tripDistance.setValue(0);
+            }
+
+            return charging;
           }
         }
       ]

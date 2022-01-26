@@ -28,13 +28,13 @@ export default class Application {
     this.expressApp = express();
     this.httpServer = new HttpServer(this.expressApp);
     this.wsServer = new WebSocketServer({server: this.httpServer, path: "/ws"})
-    this.vehicle = new Vehicle();
+    this.vehicle = new Vehicle(this);
   }
 
   /**
    * Loads the definition file for the vehicle and starts the web server.
    */
-  public start() {
+  public async start() {
     // Resolve path to definition file set in config.
     const definitionPath = 
       path.resolve(this.paths.definitions, this.config.definition + ".js");
@@ -44,7 +44,7 @@ export default class Application {
     const definition: VehicleDefinition = require(definitionPath);
     //definition.id = this.config.definition;
     
-    this.vehicle.setDefinition(definition);
+    await this.vehicle.loadDefinition(definition);
     this.vehicle.connect(this.config.interface);
 
     this.vehicle.on("data", (data: any) => {
@@ -117,6 +117,11 @@ export interface Config {
   port?: number;
   definition?: string;
   interface?: string;
+
+  gps: {
+    enabled: boolean;
+    port: string;
+  }
 }
 
 export interface Paths {

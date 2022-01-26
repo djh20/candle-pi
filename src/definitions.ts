@@ -6,8 +6,12 @@ import Metric from "./metric";
 export interface VehicleDefinition {
   //id?: string,
   name?: string,
-  //getInfo?: (metrics: Map<string, Metric>) => VehicleInfo,
+  getInfo?: (metrics: Map<string, Metric>) => VehicleInfo,
   topics?: TopicDefinition[];
+}
+
+interface VehicleInfo {
+  moving: boolean;
 }
 
 /**

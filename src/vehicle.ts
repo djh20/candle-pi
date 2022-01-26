@@ -3,6 +3,8 @@ import { EventEmitter } from "events";
 import { VehicleDefinition } from "./definitions";
 import Metric from "./metric";
 import logger from "./util/logger";
+import Application from "./application";
+import GpsManager from "./gps";
 
 export default class Vehicle extends EventEmitter {
   public definition: VehicleDefinition;
@@ -10,10 +12,14 @@ export default class Vehicle extends EventEmitter {
   
   // Socketcan doesn't have type definitions so we set channel to 'any' type.
   // Probably could automatically generate the .d.ts file, but idk how :(
-  private channel: any; 
+  private channel: any;
 
-  constructor() {
+  private app: Application;
+  private gpsManager?: GpsManager;
+
+  constructor(app: Application) {
     super();
+    this.app = app;
     this.metrics = new Map<string, Metric>();
   }
 
@@ -75,7 +81,7 @@ export default class Vehicle extends EventEmitter {
    * each metric.
    * @param definition The vehicle definition to use.
    */
-  public setDefinition(definition: VehicleDefinition) {
+  public async loadDefinition(definition: VehicleDefinition) {
     // Assign a metric instance to each metric. This instance stores the
     // current value and handles changing it.
     // This also means that the definition can be reloaded by just assigning
@@ -88,6 +94,31 @@ export default class Vehicle extends EventEmitter {
     for (const topicDef of definition.topics) {
       for (const metricDef of topicDef.metrics) {
         this.registerMetric( new Metric(metricDef) );
+      }
+    }
+
+    if (this.app.config.gps && this.app.config.gps.enabled) {
+      this.gpsManager = new GpsManager();
+      
+      const lockedMetric = new Metric({id:"gps_locked"});
+      const distanceMetric = new Metric({id:"gps_trip_distance"});
+      //const latMetric = new Metric({id:"gps_lat"});
+      //const lonMetric = new Metric({id:"gps_lon"});
+
+      let connected = await this.gpsManager.connect(this.app.config.gps.port);
+      if (connected) {
+        this.gpsManager.on("lock", (locked: boolean) => {
+          lockedMetric.setValue(locked ? 1 : 0);
+        });
+
+        this.gpsManager.on("move", (lat, lon, deltaDistance) => {
+          const info = this.definition.getInfo(this.metrics);
+          if (info.moving) {
+            distanceMetric.setValue(distanceMetric.value + deltaDistance);
+          }
+        });
+
+        this.gpsManager.listen();
       }
     }
 

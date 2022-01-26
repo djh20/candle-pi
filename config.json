@@ -1,5 +1,10 @@
 {
   "port": 8080,
   "definition": "nissan-leaf-2011-ze0",
-  "interface": "vcan0" 
+  "interface": "vcan0",
+
+  "gps": {
+    "enabled": true,
+    "port": "/dev/ttyS0"
+  }
 }
