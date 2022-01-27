@@ -36,9 +36,9 @@ export default class Metric extends EventEmitter {
 
     // Check if value has changed since it was last set.
     if (value != this.value) {
-      if (this.definition.rateLimit) {
+      if (this.definition.cooldown) {
         let timeSinceLastChange = Date.now() - this.lastChangeTime;
-        if (timeSinceLastChange < this.definition.rateLimit) return;
+        if (timeSinceLastChange < this.definition.cooldown) return;
       }
       
       this.value = value;

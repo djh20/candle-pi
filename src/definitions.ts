@@ -37,7 +37,7 @@ export interface MetricDefinition {
    * ignored. This property should only be used on metrics which are having
    * their value set very often.
    */
-  rateLimit?: number,
+  cooldown?: number,
 
   /**
    * The number of decimal places to round the metric value to.

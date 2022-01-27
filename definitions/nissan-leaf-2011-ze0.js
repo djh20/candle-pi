@@ -77,7 +77,7 @@ module.exports = {
       metrics: [
         {
           id: 'power',
-          rateLimit: 80,
+          cooldown: 80,
           suffix: ' kW',
           precision: 2,
           process: (data) => {
@@ -141,13 +141,13 @@ module.exports = {
       metrics: [
         {
           id: 'left_speed',
-          rateLimit: 150,
+          cooldown: 150,
           process: (data) => ((data[2] << 8) | data[3]),
           //convert: (value) => new Uint16Array([value])
         },
         {
           id: 'right_speed',
-          rateLimit: 150,
+          cooldown: 150,
           process: (data) => ((data[0] << 8) | data[1]),
           //convert: (value) => new Uint16Array([value])
         },
@@ -156,7 +156,7 @@ module.exports = {
           suffix: ' km/h',
           precision: 1,
           //log: true,
-          rateLimit: 50,
+          cooldown: 50,
           process: (data) => ((data[4] << 8) | data[5]) / 100
         },
       ]
