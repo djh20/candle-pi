@@ -39,7 +39,14 @@ module.exports = {
       metrics: [
         {
           id: 'soc_gids',
-          process: (data) => (data[0] << 2) | (data[1] >> 6)
+          process: (data) => {
+            const gids = (data[0] << 2) | (data[1] >> 6);
+            
+            // Gids shows as 1023 on startup; this is incorrect so we ignore it.
+            if (gids >= 1000) return null;
+
+            return gids;
+          }
         },
         {
           id: 'soh',
