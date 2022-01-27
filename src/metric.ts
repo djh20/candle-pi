@@ -16,6 +16,11 @@ export default class Metric extends EventEmitter {
   }
   
   public setValue(value: number) {
+    // Sometimes null is returned from process functions in the definition file.
+    // This happens when the data cannot be processed, so we should just ignore
+    // the value (which keeps the previous state).
+    if (value == null) return;
+
     if (this.definition.precision) {
       // Round the value to have 'precision' number of decimal places.
 
