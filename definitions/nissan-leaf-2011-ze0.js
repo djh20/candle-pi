@@ -149,7 +149,7 @@ module.exports = {
           suffix: ' km/h',
           precision: 1,
           //log: true,
-          rateLimit: 80,
+          rateLimit: 50,
           // Increased division from 100 to 101 to decrease speed a bit.
           process: (data) => ((data[4] << 8) | data[5]) / 101
         },
