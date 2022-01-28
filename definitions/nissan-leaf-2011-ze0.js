@@ -26,6 +26,13 @@ module.exports = {
         {
           id: 'powered',
           process: (data) => (data[1] & 0x40) >> 6,
+          onChange: (value, vehicle) => {
+            if (value) {
+              vehicle.tripManager.startTrip(vehicle);
+            } else {
+              vehicle.tripManager.endTrip();
+            }
+          }
         },
         {
           id: 'eco',
@@ -56,11 +63,15 @@ module.exports = {
         {
           id: 'range',
           suffix: 'km',
-          process: (data, metrics) => {
+          process: (data, vehicle) => {
+            // This function is called after the previous metrics in this topic.
+            // That means soc_gids will be set prior and we can use it for this
+            // calculation.
+
             // Range Calculation (roughly 81km for 171 gids)
             // - Division is to convert Wh to kWh
             // - Minus 1.15kWh is reserved energy that cannot be used.
-            const gids = metrics.get('soc_gids').value;
+            const gids = vehicle.metrics.get('soc_gids').value;
             
             let kWh = ((gids*whPerGid)/1000.0)-1.15;
             if (kWh < 0) kWh = 0;
@@ -121,16 +132,17 @@ module.exports = {
         {
           //id: 9,
           id: 'charging',
-          process: (data, metrics) => {
+          process: (data, vehicle) => {
             const val = (data[6] & 0xE0);
             const charging = val == 192 || val == 224 ? 1 : 0;
-
-            if (charging) {
-              const tripDistance = metrics.get('gps_trip_distance');
+            return charging;
+          },
+          onChange: (value, vehicle) => {
+            // Reset trip distance when car starts charging.
+            if (value) {
+              const tripDistance = vehicle.metrics.get('gps_trip_distance');
               if (tripDistance) tripDistance.setValue(0);
             }
-
-            return charging;
           }
         }
       ]
@@ -161,6 +173,22 @@ module.exports = {
         },
       ]
     },
+    /*{
+      id: 0x5C0,
+      name: 'Lithium Battery Controller (500ms)',
+      metrics: [
+        {
+          id: 'battery_temp',
+          process: (data) => {
+            // Battery Temperature as reported by the LBC. Effectively has only
+            // 7-bit precision, as the bottom bit is always 0.
+            if ( (data[0] >> 6) == 1 ) {
+              return (data[2] / 2) - 40;
+            }
+          }
+        }
+      ]
+    },*/
     {
       id: 0x55a,
       name: 'Inverter (100ms)',

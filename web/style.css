@@ -1,0 +1,12 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.header .title {
+  font-size: 30pt;
+  margin-right: 4px;
+}
+
+.header .subtitle {
+  font-size: 14pt;
+}

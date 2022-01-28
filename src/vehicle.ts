@@ -5,22 +5,25 @@ import Metric from "./metric";
 import logger from "./util/logger";
 import Application from "./application";
 import GpsManager from "./gps";
+import TripManager from "./trip";
 
 export default class Vehicle extends EventEmitter {
+  public app: Application;
   public definition: VehicleDefinition;
   public metrics: Map<string, Metric>;
+  public tripManager: TripManager;
   
   // Socketcan doesn't have type definitions so we set channel to 'any' type.
   // Probably could automatically generate the .d.ts file, but idk how :(
   private channel: any;
 
-  private app: Application;
   private gpsManager?: GpsManager;
 
   constructor(app: Application) {
     super();
     this.app = app;
     this.metrics = new Map<string, Metric>();
+    this.tripManager = new TripManager();
   }
 
   public connect(channel: string) {
@@ -56,6 +59,12 @@ export default class Vehicle extends EventEmitter {
       if (metric.definition.log) {
         logger.info("vehicle", `${metric.definition.id}: ${value}`)
       }
+      
+      if (metric.definition.onChange && !this.tripManager.playing) {
+        metric.definition.onChange(metric.value, this);
+      }
+      
+      this.tripManager.addEntry(metric);
 
       // Send metric data through websocket.
       this.emit("data", metric.data);
@@ -70,7 +79,7 @@ export default class Vehicle extends EventEmitter {
 
     topicDef.metrics.forEach(metricDef => {
       const metric = this.metrics.get(metricDef.id);
-      metric.setValue( metricDef.process(frame.data, this.metrics) );
+      metric.setValue( metricDef.process(frame.data, this) );
       //logger.info("can", `${metricDef.id}: ${metric.value}`);
       //metric.instance.setValue( metric.process(frame.data) );
     });
@@ -102,11 +111,13 @@ export default class Vehicle extends EventEmitter {
       
       const lockedMetric = new Metric({id:"gps_locked"});
       const distanceMetric = new Metric({id:"gps_trip_distance"});
-      //const latMetric = new Metric({id:"gps_lat"});
-      //const lonMetric = new Metric({id:"gps_lon"});
+      const latMetric = new Metric({id:"gps_lat"});
+      const lonMetric = new Metric({id:"gps_lon"});
 
       this.registerMetric(lockedMetric);
       this.registerMetric(distanceMetric);
+      this.registerMetric(latMetric);
+      this.registerMetric(lonMetric);
 
       let connected = await this.gpsManager.connect(this.app.config.gps.port);
       if (connected) {
@@ -119,21 +130,18 @@ export default class Vehicle extends EventEmitter {
           if (info.moving) {
             distanceMetric.setValue(distanceMetric.value + deltaDistance);
           }
+          latMetric.setValue(lat);
+          lonMetric.setValue(lon);
         });
 
         this.gpsManager.listen();
       }
-    }
 
-    /*
-    // Example of registering extra metrics.
-    const gpsLock = new Metric({id:"gps_lock"});
-    this.registerMetric(gpsLock);
-    //gpsLock.setValue(1);
-    this.registerMetric( new Metric({id:"gps_trip_distance"}) );
-    this.registerMetric( new Metric({id:"gps_lat"}) );
-    this.registerMetric( new Metric({id:"gps_lon"}) );
-    */
+      
+      //await this.tripManager.setFilePath(this.app.paths.recordings, '1643337352076.log');
+      //await this.tripManager.rFile.load();
+      //this.tripManager.startPlayback(this);
+    }
     
     this.definition = definition;
   }

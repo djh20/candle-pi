@@ -15,7 +15,7 @@ export default class Metric extends EventEmitter {
     this.lastChangeTime = 0;
   }
   
-  public setValue(value: number) {
+  public setValue(value: number, ignoreCooldown?: boolean) {
     // Sometimes null is returned from process functions in the definition file.
     // This happens when the data cannot be processed, so we should just ignore
     // the value (which keeps the previous state).
@@ -36,7 +36,7 @@ export default class Metric extends EventEmitter {
 
     // Check if value has changed since it was last set.
     if (value != this.value) {
-      if (this.definition.cooldown) {
+      if (this.definition.cooldown && !ignoreCooldown) {
         let timeSinceLastChange = Date.now() - this.lastChangeTime;
         if (timeSinceLastChange < this.definition.cooldown) return;
       }
