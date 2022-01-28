@@ -112,12 +112,12 @@ export default class Vehicle extends EventEmitter {
       const lockedMetric = new Metric({id:"gps_locked"});
       const distanceMetric = new Metric({id:"gps_trip_distance"});
       const latMetric = new Metric({id:"gps_lat"});
-      const lonMetric = new Metric({id:"gps_lon"});
+      const lngMetric = new Metric({id:"gps_lng"});
 
       this.registerMetric(lockedMetric);
       this.registerMetric(distanceMetric);
       this.registerMetric(latMetric);
-      this.registerMetric(lonMetric);
+      this.registerMetric(lngMetric);
 
       let connected = await this.gpsManager.connect(this.app.config.gps.port);
       if (connected) {
@@ -125,13 +125,13 @@ export default class Vehicle extends EventEmitter {
           lockedMetric.setValue(locked ? 1 : 0);
         });
 
-        this.gpsManager.on("move", (lat, lon, deltaDistance) => {
+        this.gpsManager.on("move", (lat, lng, deltaDistance) => {
           const info = this.definition.getInfo(this.metrics);
           if (info.moving) {
             distanceMetric.setValue(distanceMetric.value + deltaDistance);
           }
           latMetric.setValue(lat);
-          lonMetric.setValue(lon);
+          lngMetric.setValue(lng);
         });
 
         this.gpsManager.listen();
