@@ -60,8 +60,8 @@ export default class Application {
 
     this.wsServer.on("connection", (ws) => {
       logger.info("ws", "New connection!");
-      const keys = Array.from(this.vehicle.metrics.keys());
-      const values = Array.from(this.vehicle.metrics.values());
+      const metricsKeys = Array.from(this.vehicle.metrics.keys());
+      const metricsValues = Array.from(this.vehicle.metrics.values());
 
       ws.on("message", (data) => {
         const msg: WebSocketMessage = JSON.parse(data.toString());
@@ -73,7 +73,11 @@ export default class Application {
 
           if (msg.topic == "metrics") {
             // Send array of metric IDs to the client.
-            ws.send(JSON.stringify(keys));
+            ws.send(JSON.stringify(metricsKeys));
+
+            metricsValues.forEach((metric) => {
+              ws.send(metric.data);
+            });
           }
         } else if (msg.event == "command") {
           this.runCommand(msg.command);
