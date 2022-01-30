@@ -141,9 +141,8 @@ export default class Application {
         if (args[0] == "set") {
           const metric = this.vehicle.metrics.get(args[1]);
           const values = args[2].split(',').map(e => parseFloat(e));
-          console.log(values);
 
-          //if (metric) metric.setValues(value);
+          if (metric) metric.update(values, true);
         }
       }
     } catch(err) {
