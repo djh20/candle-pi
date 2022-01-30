@@ -3,7 +3,7 @@ const kmPerKwh = 6.5; // original = 7.1
 
 module.exports = {
   name: 'Nissan Leaf 2011 (ZE0)',
-  getInfo: (metrics) => {
+  getStatus: (metrics) => {
     // This function is called by the application periodically to get information about the vehicle.
 
     // Currently, the application only calls this to see if you're moving (for the gps).
@@ -21,13 +21,13 @@ module.exports = {
       metrics: [
         {
           id: 'gear',
-          process: (data) => (data[0] & 0xF0) >> 4,
+          process: (data) => [ (data[0] & 0xF0) >> 4 ],
         },
         {
           id: 'powered',
-          process: (data) => (data[1] & 0x40) >> 6,
-          onChange: (value, vehicle) => {
-            if (value) {
+          process: (data) => [ (data[1] & 0x40) >> 6 ],
+          onChange: (data, vehicle) => {
+            if (data[0] == 1) {
               vehicle.tripManager.startTrip(vehicle);
             } else {
               vehicle.tripManager.endTrip();
@@ -36,7 +36,7 @@ module.exports = {
         },
         {
           id: 'eco',
-          process: (data) => (data[1] & 0x10) >> 4,
+          process: (data) => [ (data[1] & 0x10) >> 4 ],
         }
       ]
     },
@@ -52,13 +52,13 @@ module.exports = {
             // Gids shows as 1023 on startup; this is incorrect so we ignore it.
             if (gids >= 1000) return null;
 
-            return gids;
+            return [gids];
           }
         },
         {
           id: 'soh',
           suffix: '%',
-          process: (data) => (data[4] & 0xFE) >> 1 
+          process: (data) => [ (data[4] & 0xFE) >> 1 ] 
         },
         {
           id: 'range',
@@ -71,13 +71,13 @@ module.exports = {
             // Range Calculation (roughly 81km for 171 gids)
             // - Division is to convert Wh to kWh
             // - Minus 1.15kWh is reserved energy that cannot be used.
-            const gids = vehicle.metrics.get('soc_gids').value;
+            const gids = vehicle.metrics.get('soc_gids').values[0];
             
-            let kWh = ((gids*whPerGid)/1000.0)-1.15;
+            const kWh = ((gids*whPerGid)/1000.0)-1.15;
             if (kWh < 0) kWh = 0;
 
-            let range = kWh*kmPerKwh;
-            return Math.round(range);
+            const range = Math.round(kWh*kmPerKwh);
+            return [range];
           }
         }
       ]
@@ -92,7 +92,7 @@ module.exports = {
           suffix: ' kW',
           precision: 2,
           process: (data) => {
-            let voltage = ((data[2] << 2) | (data[3] >> 6)) / 2.0;
+            const voltage = ((data[2] << 2) | (data[3] >> 6)) / 2.0;
             let current = ((data[0] << 3) | (data[1] & 0xe0) >> 5);
             
             // 0x0400 = 10000000000 (11 bits)
@@ -105,11 +105,10 @@ module.exports = {
             if (current & 0x0400) current = -(~current & 0x7FF)-1
             current = current / 2.0;
             
-            let power = (current * voltage)/1000.0;
+            const power = (current * voltage)/1000.0;
             
-            return power;
+            return [power];
           },
-          //convert: (value) => new Uint16Array([value*100])
         }
       ]
     },
@@ -120,8 +119,9 @@ module.exports = {
         {
           id: 'soc_percent',
           suffix: '%',
-          process: (data) => ((data[0] << 2) | (data[1] >> 6)) / 10.0,
-          //convert: (value) => new Uint16Array([value*100])
+          process: (data) => {
+            return [ ((data[0] << 2) | (data[1] >> 6)) / 10.0 ];
+          }
         }
       ]
     },
@@ -135,13 +135,13 @@ module.exports = {
           process: (data, vehicle) => {
             const val = (data[6] & 0xE0);
             const charging = val == 192 || val == 224 ? 1 : 0;
-            return charging;
+            return [charging];
           },
-          onChange: (value, vehicle) => {
+          onChange: (values, vehicle) => {
             // Reset trip distance when car starts charging.
-            if (value) {
+            if (data[0] == 1) {
               const tripDistance = vehicle.metrics.get('gps_trip_distance');
-              if (tripDistance) tripDistance.setValue(0);
+              if (tripDistance) tripDistance.update([0]);
             }
           }
         }
@@ -154,13 +154,13 @@ module.exports = {
         {
           id: 'left_speed',
           cooldown: 150,
-          process: (data) => ((data[2] << 8) | data[3]),
+          process: (data) => [ ((data[2] << 8) | data[3]) ],
           //convert: (value) => new Uint16Array([value])
         },
         {
           id: 'right_speed',
           cooldown: 150,
-          process: (data) => ((data[0] << 8) | data[1]),
+          process: (data) => [ ((data[0] << 8) | data[1]) ],
           //convert: (value) => new Uint16Array([value])
         },
         {
@@ -169,7 +169,7 @@ module.exports = {
           precision: 1,
           //log: true,
           cooldown: 50,
-          process: (data) => ((data[4] << 8) | data[5]) / 100
+          process: (data) => [ ((data[4] << 8) | data[5]) / 100 ]
         },
       ]
     },
@@ -197,14 +197,14 @@ module.exports = {
           id: 'motor_temp',
           suffix: '°C',
           precision: 2,
-          process: (data) => 5.0 / 9.0 * (data[1] - 32),
+          process: (data) => [ (5.0 / 9.0) * (data[1] - 32) ],
           //convert: (value) => new Uint16Array([value*100])
         },
         {
           id: 'inverter_temp',
           suffix: '°C',
           precision: 2,
-          process: (data) => 5.0 / 9.0 * (data[2] - 32),
+          process: (data) => [ (5.0 / 9.0) * (data[2] - 32) ],
           //convert: (value) => new Uint16Array([value*100])
         }
       ]
@@ -219,7 +219,7 @@ module.exports = {
           process: (data) => {
             // if the byte is 11111111, then the temperature is invalid.
             if (data[6] == 0xff) return null;
-            return (data[6]) / 2.0 - 40;
+            return [ (data[6]) / 2.0 - 40 ];
           },
           //convert: (value) => new Uint16Array([value*100])
         }
@@ -231,7 +231,7 @@ module.exports = {
       metrics: [
         {
           id: 'climate_fan_speed',
-          process: (data) => (data[4] & 0xF0) / 8
+          process: (data) => [ (data[4] & 0xF0) / 8 ]
         }
       ]
     }

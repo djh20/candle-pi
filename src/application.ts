@@ -50,18 +50,15 @@ export default class Application {
     await this.vehicle.loadDefinition(definition);
     this.vehicle.connect(this.config.interface);
 
-    this.vehicle.on("data", (data: any) => {
-      this.subscriptions.forEach((sub) => {
-        if (sub.topic == "metrics") {
-          sub.socket.send(data);
-        }
-      });
+    this.vehicle.on("data", (topic: string, data: string) => {
+      const subs = this.subscriptions.filter(sub => sub.topic == topic);
+      subs.forEach(sub => sub.socket.send(data));
     });
 
     this.wsServer.on("connection", (ws) => {
       logger.info("ws", "New connection!");
-      const metricsKeys = Array.from(this.vehicle.metrics.keys());
-      const metricsValues = Array.from(this.vehicle.metrics.values());
+      const metricNames = Array.from(this.vehicle.metrics.keys());
+      const metricInstances = Array.from(this.vehicle.metrics.values());
 
       ws.on("message", (data) => {
         const msg: WebSocketMessage = JSON.parse(data.toString());
@@ -73,10 +70,10 @@ export default class Application {
 
           if (msg.topic == "metrics") {
             // Send array of metric IDs to the client.
-            ws.send(JSON.stringify(metricsKeys));
+            ws.send(JSON.stringify(metricNames));
 
-            metricsValues.forEach((metric) => {
-              ws.send(metric.data);
+            metricInstances.forEach((metric) => {
+              ws.send(metric.jsonData);
             });
           }
         } else if (msg.event == "command") {
@@ -103,23 +100,11 @@ export default class Application {
     });
 
     this.expressApp.get('/api/vehicle/metrics', (req, res) => {
-      let data = {};
+      let body = {};
       this.vehicle.metrics.forEach((metric) => {
-        data[metric.definition.id] = metric.value;
+        body[metric.definition.id] = metric.values;
       });
-      res.send(data);
-    });
-
-    this.expressApp.get('/api/vehicle/metrics/:id/set/:value', (req, res) => {
-      const metric = this.vehicle.metrics.get(req.params.id);
-      if (metric) {
-        try {
-          const value = parseInt(req.params.value);
-          metric.setValue(value);
-          return res.sendStatus(200);
-        } catch {}
-      }
-      res.sendStatus(400);
+      res.send(body);
     });
 
     this.httpServer.listen(this.config.port, () => {
@@ -142,7 +127,7 @@ export default class Application {
         } else if (args[0] == "playback") {
           if (args[1] == "start") {
             // Convert seconds to ms
-            const time = parseInt(args[2]) * 1000;
+            const time = (args.length >= 3) ? (parseInt(args[2]) * 1000) : null;
             await this.vehicle.tripManager.startPlayback(this.vehicle, time);
           } else if (args[1] == "stop") {
             this.vehicle.tripManager.stopPlayback();
@@ -155,8 +140,10 @@ export default class Application {
       } else if (topic == "metric") {
         if (args[0] == "set") {
           const metric = this.vehicle.metrics.get(args[1]);
-          const value = parseFloat(args[2]);
-          if (metric) metric.setValue(value);
+          const values = args[2].split(',').map(e => parseFloat(e));
+          console.log(values);
+
+          //if (metric) metric.setValues(value);
         }
       }
     } catch(err) {

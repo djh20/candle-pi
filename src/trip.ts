@@ -13,7 +13,7 @@ export default class TripManager {
   public recording: boolean;
   public playing: boolean;
 
-  public playbackLoop?: NodeJS.Timer;
+  public playbackTimer?: NodeJS.Timer;
 
   private lastUpdateTime: number;
   
@@ -57,40 +57,51 @@ export default class TripManager {
   public addEntry(metric: Metric) {
     if (this.rFile && this.recording) {
       const timeOffset = Date.now() - this.rFile.startTime;
-      this.rFile.write(`${timeOffset} ${metric.index} ${metric.value}\n`);
+      this.rFile.write(`${timeOffset} ${metric.index} ${metric.values}\n`);
     }
   }
 
   public async startPlayback(vehicle: Vehicle, timePosition?: number) {
     if (!this.rFile) return;
 
+    this.stopPlayback();
     this.playing = true;
 
     if (timePosition != null) {
       this.rFile.timePosition = timePosition;
     }
 
-    await this.rFile.load();
-
-    this.playbackLoop = setInterval(() => {
-      this.updatePlayback(vehicle);
-    }, 50);
+    await this.rFile.loadKeyframes(vehicle);
+    await this.updatePlayback(vehicle);
   }
 
-  private updatePlayback(vehicle: Vehicle) {
+  private async updatePlayback(vehicle: Vehicle) {
     if (this.lastUpdateTime) {
       const deltaTime = Date.now() - this.lastUpdateTime;
       this.rFile.timePosition += deltaTime;
     }
 
-    this.rFile.update(vehicle);
+    await this.rFile.processKeyframes(vehicle);
     this.lastUpdateTime = Date.now();
+
+    // We use timeout instead of interval to eliminate the possibility of
+    // updatePlayback being called before it has finished processing from
+    // the previous loop. Instead, we only set the timeout again once this
+    // function has finished processing. 
+    
+    // This will most likely cause more variation in the amount of time between
+    // updates, but this isn't an issue because we use deltaTime for increasing
+    // the time position.
+    this.playbackTimer = setTimeout(() => {
+      this.updatePlayback(vehicle);
+    }, 50);
   }
 
   public stopPlayback() {
-    if (this.playbackLoop) {
-      clearInterval(this.playbackLoop);
+    if (this.playbackTimer) {
+      clearTimeout(this.playbackTimer);
     }
+    this.lastUpdateTime = null;
     this.playing = false;
   }
 
@@ -107,12 +118,12 @@ export default class TripManager {
 
 class RecordingFile {
   public path: string;
-  public data?: RecordingData;
 
   public startTime: number;
   public timePosition: number;
 
   private wStream?: fs.WriteStream;
+  private keyframes?: RecordingKeyframe[];
 
   /**
    * This buffer is used to decrease the rate of file writes for hopefully
@@ -130,36 +141,41 @@ class RecordingFile {
   /**
    * Reads the file and parses the content to get the next chunk of keyframes.
    */
-  public async load(): Promise<void> {
+  public async loadKeyframes(vehicle: Vehicle): Promise<void> {
     return new Promise((resolve) => {
-      this.data = { keyframes: [] };
+      this.keyframes = [];
 
       const lineReader = readline.createInterface({
         input: fs.createReadStream(this.path),
       });
       
       let i = 0;
+      let metricIds: string[] = [];
+      let latestMetricData: number[][] = [];
   
       lineReader.on('line', (line) => {
         if (i == 0) {
           this.startTime = parseInt(line);
         } else if (i == 1) {
-          this.data.metricIds = line.split(',');
+          metricIds = line.split(',');
         } else {
-          if (this.data.keyframes.length >= MAX_LOADED_KEYFRAMES) return;
+          if (this.keyframes.length >= MAX_LOADED_KEYFRAMES) return;
 
-          const lineSpilt = line.split(' ');
-          const timeOffset = parseInt(lineSpilt[0]);
+          const segments = line.split(' ');
+          const timeOffset = parseInt(segments[0]);
+          
+          const metricIndex = parseInt(segments[1]);
+          
+          const data = segments[2].split(',').map(e => parseFloat(e));
           
           if (timeOffset >= this.timePosition) {
-            const metricIndex = parseInt(lineSpilt[1]);
-            const value = parseFloat(lineSpilt[2]);
-
-            this.data.keyframes.push({
+            this.keyframes.push({
               timeOffset: timeOffset,
-              metricId: this.data.metricIds[metricIndex],
-              value: value
+              metricId: metricIds[metricIndex],
+              data: data
             });
+          } else {
+            latestMetricData[metricIndex] = data;
           }
         }
         i++;
@@ -167,32 +183,38 @@ class RecordingFile {
 
       lineReader.on('close', () => {
         // If we didn't get any more keyframes then go back to the start (loop).
-        if (this.data.keyframes.length == 0) {
+        if (this.keyframes.length == 0) {
           this.timePosition = 0;
+        }
+        for (let i = 0; i < latestMetricData.length; i++) {
+          const id = metricIds[i];
+          const data = latestMetricData[i];
+          const metric = vehicle.metrics.get(id);
+          if (metric) metric.update(data, true);
         }
         resolve();
       });
     });
   }
 
-  public update(vehicle: Vehicle) {
-    for (let i = 0; i < this.data.keyframes.length; i++) {
-      const keyframe = this.data.keyframes[i];
+  public async processKeyframes(vehicle: Vehicle) {
+    for (let i = 0; i < this.keyframes.length; i++) {
+      const keyframe = this.keyframes[i];
      
       if (this.timePosition >= keyframe.timeOffset) {
         const metric = vehicle.metrics.get(keyframe.metricId);
-        if (metric) metric.setValue(keyframe.value, true);
+        if (metric) metric.update(keyframe.data, true);
 
         // Remove the keyframe from the array and decrement i as everything to
         // the right has been shifted down by one index.
-        this.data.keyframes.splice(i, 1);
+        this.keyframes.splice(i, 1);
         i--;
       }
     }
     
     // If we've ran out of loaded keyframes then load the next set.
-    if (this.data.keyframes.length == 0) {
-      this.load();
+    if (this.keyframes.length == 0) {
+      await this.loadKeyframes(vehicle);
     }
   }
 
@@ -222,13 +244,8 @@ class RecordingFile {
   }
 }
 
-interface RecordingData {
-  metricIds?: string[];
-  keyframes?: RecordingKeyframe[];
-}
-
 interface RecordingKeyframe {
   timeOffset: number;
   metricId: string;
-  value: number;
+  data: number[];
 }

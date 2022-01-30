@@ -7,11 +7,11 @@ import Vehicle from "./vehicle";
 export interface VehicleDefinition {
   //id?: string,
   name?: string,
-  getInfo?: (metrics: Map<string, Metric>) => VehicleInfo,
+  getStatus?: (metrics: Map<string, Metric>) => VehicleStatus,
   topics?: TopicDefinition[];
 }
 
-interface VehicleInfo {
+interface VehicleStatus {
   moving: boolean;
 }
 
@@ -28,6 +28,7 @@ export interface TopicDefinition {
 export interface MetricDefinition {
   id: string,
   suffix?: string,
+  defaultValues?: number[]
 
   /**
    * The minimum time in milliseconds allowed between setting the value of
@@ -50,9 +51,9 @@ export interface MetricDefinition {
    * This method takes in a CAN message buffer and returns the corresponding 
    * value.
    */
-  process?: (data: Buffer, vehicle: Vehicle) => number,
+  process?: (data: Buffer, vehicle: Vehicle) => number[],
 
-  onChange?: (value: number, vehicle: Vehicle) => void,
+  onChange?: (values: number[], vehicle: Vehicle) => void,
 
   /**
    * If the metric should be logged to the console whenever its value changes.

@@ -24,11 +24,11 @@ export default class GpsManager extends EventEmitter {
     return new Promise((resolve) => {
       let socket = new SerialPort(port, {baudRate: 9600}, (err) => {
         if (!err) {
-          logger.info('gps', "Connected!");
+          logger.info('gps', `Connected to ${port}`);
           this.connected = true;
           resolve(true);
         } else {
-          logger.warn('gps', "Failed to connect!");
+          logger.warn('gps', `Failed to connect to ${port}`);
           this.connected = false;
           resolve(false);
         }
@@ -75,13 +75,13 @@ export default class GpsManager extends EventEmitter {
       // Round to max of 2 decimal places
       distance = Math.round((distance + Number.EPSILON) * 100) / 100;
 
-      logger.info("gps", `Moved ${distance}m`);
-
       // to try and correct for gps wandering and glitching.
       // this isn't a very good way of doing it, it should probably be changed.
       if (distance <= 0.3 || distance >= 1000) return;
 
       this.emit("move", lat, lon, distance);
+    } else {
+      this.emit("move", lat, lon, 0);
     }
 
     this.lastLat = lat;
