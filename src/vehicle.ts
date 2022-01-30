@@ -5,22 +5,25 @@ import Metric from "./metric";
 import logger from "./util/logger";
 import Application from "./application";
 import GpsManager from "./gps";
+import TripManager from "./trip";
 
 export default class Vehicle extends EventEmitter {
+  public app: Application;
   public definition: VehicleDefinition;
   public metrics: Map<string, Metric>;
+  public tripManager: TripManager;
   
   // Socketcan doesn't have type definitions so we set channel to 'any' type.
   // Probably could automatically generate the .d.ts file, but idk how :(
   private channel: any;
 
-  private app: Application;
   private gpsManager?: GpsManager;
 
   constructor(app: Application) {
     super();
     this.app = app;
     this.metrics = new Map<string, Metric>();
+    this.tripManager = new TripManager();
   }
 
   public connect(channel: string) {
@@ -52,13 +55,19 @@ export default class Vehicle extends EventEmitter {
     this.metrics.set(metric.definition.id, metric);
 
     // Listen for whenever the metric value changes.
-    metric.on("changed", (value) => {
+    metric.on("changed", (values: number[]) => {
       if (metric.definition.log) {
-        logger.info("vehicle", `${metric.definition.id}: ${value}`)
+        logger.info("vehicle", `${metric.definition.id}: ${values}`)
       }
+      
+      if (metric.definition.onChange && !this.tripManager.playing) {
+        metric.definition.onChange(values, this);
+      }
+      
+      this.tripManager.addEntry(metric);
 
       // Send metric data through websocket.
-      this.emit("data", metric.data);
+      this.emit("data", "metrics", metric.jsonData);
     });
 
     logger.info("vehicle", `Registered metric: ${metric.definition.id}`)
@@ -70,7 +79,7 @@ export default class Vehicle extends EventEmitter {
 
     topicDef.metrics.forEach(metricDef => {
       const metric = this.metrics.get(metricDef.id);
-      metric.setValue( metricDef.process(frame.data, this.metrics) );
+      metric.update(metricDef.process(frame.data, this));
       //logger.info("can", `${metricDef.id}: ${metric.value}`);
       //metric.instance.setValue( metric.process(frame.data) );
     });
@@ -100,40 +109,35 @@ export default class Vehicle extends EventEmitter {
     if (this.app.config.gps && this.app.config.gps.enabled) {
       this.gpsManager = new GpsManager();
       
-      const lockedMetric = new Metric({id:"gps_locked"});
-      const distanceMetric = new Metric({id:"gps_trip_distance"});
-      //const latMetric = new Metric({id:"gps_lat"});
-      //const lonMetric = new Metric({id:"gps_lon"});
+      const lockedMetric = new Metric({id: "gps_locked"});
+      const distanceMetric = new Metric({id: "gps_trip_distance"});
+      const positionMetric = new Metric({
+        id: "gps_position",
+        defaultValues: [0, 0]
+      });
 
       this.registerMetric(lockedMetric);
       this.registerMetric(distanceMetric);
+      this.registerMetric(positionMetric);
 
       let connected = await this.gpsManager.connect(this.app.config.gps.port);
       if (connected) {
         this.gpsManager.on("lock", (locked: boolean) => {
-          lockedMetric.setValue(locked ? 1 : 0);
+          lockedMetric.update([locked ? 1 : 0]);
         });
 
-        this.gpsManager.on("move", (lat, lon, deltaDistance) => {
-          const info = this.definition.getInfo(this.metrics);
-          if (info.moving) {
-            distanceMetric.setValue(distanceMetric.value + deltaDistance);
+        this.gpsManager.on("move", (lat: number, lng: number, distance: number) => {
+          const status = this.definition.getStatus(this.metrics);
+          if (status.moving) {
+            const totalDistance: number = distanceMetric.values[0] + distance;
+            distanceMetric.update([totalDistance]);
           }
+          positionMetric.update([lat, lng]);
         });
 
         this.gpsManager.listen();
       }
     }
-
-    /*
-    // Example of registering extra metrics.
-    const gpsLock = new Metric({id:"gps_lock"});
-    this.registerMetric(gpsLock);
-    //gpsLock.setValue(1);
-    this.registerMetric( new Metric({id:"gps_trip_distance"}) );
-    this.registerMetric( new Metric({id:"gps_lat"}) );
-    this.registerMetric( new Metric({id:"gps_lon"}) );
-    */
     
     this.definition = definition;
   }

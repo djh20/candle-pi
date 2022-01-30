@@ -1,7 +1,8 @@
 {
   "port": 8080,
   "definition": "nissan-leaf-2011-ze0",
-  "interface": "vcan0",
+  "interface": "can0",
+  "record": true,
 
   "gps": {
     "enabled": true,
