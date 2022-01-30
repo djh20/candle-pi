@@ -73,7 +73,7 @@ module.exports = {
             // - Minus 1.15kWh is reserved energy that cannot be used.
             const gids = vehicle.metrics.get('soc_gids').values[0];
             
-            const kWh = ((gids*whPerGid)/1000.0)-1.15;
+            let kWh = ((gids*whPerGid)/1000.0)-1.15;
             if (kWh < 0) kWh = 0;
 
             const range = Math.round(kWh*kmPerKwh);
