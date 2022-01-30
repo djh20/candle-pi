@@ -26,8 +26,8 @@ module.exports = {
         {
           id: 'powered',
           process: (data) => [ (data[1] & 0x40) >> 6 ],
-          onChange: (data, vehicle) => {
-            if (data[0] == 1) {
+          onChange: (values, vehicle) => {
+            if (values[0] == 1) {
               vehicle.tripManager.startTrip(vehicle);
             } else {
               vehicle.tripManager.endTrip();
@@ -139,7 +139,7 @@ module.exports = {
           },
           onChange: (values, vehicle) => {
             // Reset trip distance when car starts charging.
-            if (data[0] == 1) {
+            if (values[0] == 1) {
               const tripDistance = vehicle.metrics.get('gps_trip_distance');
               if (tripDistance) tripDistance.update([0]);
             }
