@@ -10,3 +10,7 @@ body {
 .header .subtitle {
   font-size: 14pt;
 }
+
+#command {
+  width: 450px;
+}
