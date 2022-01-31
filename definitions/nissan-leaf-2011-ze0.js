@@ -8,10 +8,11 @@ module.exports = {
 
     // Currently, the application only calls this to see if you're moving (for the gps).
     // If you're not using a gps or don't have this information, you should just return {moving:true}.
-    const speed = metrics.get('rear_speed');
+    const speedMetric = metrics.get('wheel_speed');
 
     return {
-      moving: speed && speed.value > 0 ? true : false
+      // Check that at least one value in the wheel_speed metric is above 0.
+      moving: speedMetric ? speedMetric.values.some(v => v > 0) : false
     };
   },
   topics: [
@@ -60,6 +61,13 @@ module.exports = {
           suffix: '%',
           process: (data) => [ (data[4] & 0xFE) >> 1 ] 
         },
+
+        // Only has whole number precision so not very smooth.
+        /*{
+          id: 'battery_avg_temp',
+          log: true,
+          process: (data) => [ data[3] - 40 ]
+        },*/
         {
           id: 'range',
           suffix: 'km',
@@ -151,25 +159,38 @@ module.exports = {
       id: 0x284,
       name: 'ABS Module',
       metrics: [
+        /*
         {
           id: 'left_speed',
-          cooldown: 150,
-          process: (data) => [ ((data[2] << 8) | data[3]) ],
-          //convert: (value) => new Uint16Array([value])
+          suffix: ' km/h',
+          cooldown: 80,
+          precision: 2,
+          process: (data) => [ ((data[2] << 8) | data[3]) / 208 ],
         },
         {
           id: 'right_speed',
-          cooldown: 150,
-          process: (data) => [ ((data[0] << 8) | data[1]) ],
-          //convert: (value) => new Uint16Array([value])
+          suffix: ' km/h',
+          cooldown: 80,
+          precision: 2,
+          process: (data) => [ ((data[0] << 8) | data[1]) / 208 ],
         },
         {
           id: 'rear_speed',
           suffix: ' km/h',
           precision: 1,
-          //log: true,
           cooldown: 50,
           process: (data) => [ ((data[4] << 8) | data[5]) / 100 ]
+        },
+        */
+        {
+          id: 'wheel_speed',
+          precision: 2,
+          cooldown: 50,
+          process: (data) => [ 
+            ((data[4] << 8) | data[5]) / 100, // rear
+            ((data[2] << 8) | data[3]) / 208, // left
+            ((data[0] << 8) | data[1]) / 208 // right
+          ]
         },
       ]
     },
