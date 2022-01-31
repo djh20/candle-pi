@@ -195,7 +195,7 @@ module.exports = {
         },
       ]
     },
-    /*{
+    {
       id: 0x5C0,
       name: 'Lithium Battery Controller (500ms)',
       metrics: [
@@ -205,12 +205,12 @@ module.exports = {
             // Battery Temperature as reported by the LBC. Effectively has only
             // 7-bit precision, as the bottom bit is always 0.
             if ( (data[0] >> 6) == 1 ) {
-              return (data[2] / 2) - 40;
+              return [ (data[2] / 2) - 40 ];
             }
           }
         }
       ]
-    },*/
+    },
     {
       id: 0x55a,
       name: 'Inverter (100ms)',
