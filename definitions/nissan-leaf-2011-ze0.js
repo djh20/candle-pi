@@ -110,10 +110,10 @@ module.exports = {
             // 2 -> invert the byte and apply a mask for the first 11 bits (js numbers are 32-bit)
             // 3 -> minus 1 for 2's complement
             
-            if (current & 0x0400) current = (~current & 0x7FF)-1
-            current = current / 2.0;
+            if (current & 0x0400) current = -(~current & 0x7FF)-1
+            current = -current / 2.0;
             
-            const power = (current * voltage)/1000.0;
+            const power = (current * voltage)/1000;
             
             return [power];
           },
