@@ -138,8 +138,13 @@ module.exports = {
       name: 'Vehicle Control Module (10ms)',
       metrics: [
         {
-          //id: 9,
           id: 'charging',
+
+          // Reset metric values after no data recieved for 10 seconds.
+          // This is because we don't know if the car is still plugged in
+          // after the vehicle CAN system goes to sleep.
+          timeout: 10000,
+          
           process: (data, vehicle) => {
             const val = (data[6] & 0xE0);
             const charging = val == 192 || val == 224 ? 1 : 0;

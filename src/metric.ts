@@ -7,17 +7,22 @@ export default class Metric extends EventEmitter {
   public values: number[];
   public definition: MetricDefinition;
 
+  private defaultValues: number[];
   private lastChangeTime: number;
+  private timeoutTimer?: NodeJS.Timer;
 
   constructor(definition: MetricDefinition) {
     super();
 
-    // Set value to default value defined in definition, otherwise set to zero.
-    this.values = 
-      (definition.defaultValues != null) ? definition.defaultValues : [0];
-
+    this.defaultValues = definition.defaultValues || [0];
     this.definition = definition;
+    this.reset();
+  }
+
+  public reset() {
+    this.values = this.defaultValues;
     this.lastChangeTime = 0;
+    this.notify();
   }
   
   public update(values: number[], ignoreCooldown?: boolean) {
@@ -41,6 +46,17 @@ export default class Metric extends EventEmitter {
       }
     }
 
+    if (this.definition.timeout) {
+      if (this.timeoutTimer) {
+        clearTimeout(this.timeoutTimer);
+      }
+
+      this.timeoutTimer = setTimeout(
+        () => this.reset(), 
+        this.definition.timeout
+      );
+    }
+
     // Check if value has changed since it was last set.
     const changed = !arraysEqual(this.values, values);
 
@@ -49,11 +65,15 @@ export default class Metric extends EventEmitter {
         let timeSinceLastChange = Date.now() - this.lastChangeTime;
         if (timeSinceLastChange < this.definition.cooldown) return;
       }
-      
-      this.values = values;
+
       this.lastChangeTime = Date.now();
-      this.emit("changed", values);
+      this.values = values;
+      this.notify();
     }
+  }
+
+  private notify() {
+    this.emit("changed", this.values);
   }
 
   get jsonData(): string {

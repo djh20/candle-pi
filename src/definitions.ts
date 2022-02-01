@@ -41,6 +41,8 @@ export interface MetricDefinition {
    */
   cooldown?: number,
 
+  timeout?: number;
+
   /**
    * The number of decimal places to round the metric value to.
    */
