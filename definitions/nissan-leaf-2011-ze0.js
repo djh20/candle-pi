@@ -95,7 +95,7 @@ module.exports = {
       name: 'Lithium Battery Controller (10ms)',
       metrics: [
         {
-          id: 'power',
+          id: 'power_output',
           cooldown: 80,
           suffix: ' kW',
           precision: 2,
@@ -110,7 +110,7 @@ module.exports = {
             // 2 -> invert the byte and apply a mask for the first 11 bits (js numbers are 32-bit)
             // 3 -> minus 1 for 2's complement
             
-            if (current & 0x0400) current = -(~current & 0x7FF)-1
+            if (current & 0x0400) current = (~current & 0x7FF)-1
             current = current / 2.0;
             
             const power = (current * voltage)/1000.0;
