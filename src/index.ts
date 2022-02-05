@@ -1,9 +1,8 @@
 /*     
-  ____ ____ ____ ___  ___  ____ ____ ____ _   _ ____ ____ _  _
-  |__/ |__| [__  |__] |__] |___ |__/ |__/  \_/  |    |__| |\ |
-  |  \ |  | ___] |    |__] |___ |  \ |  \   |   |___ |  | | \|
-  Delta Edition
-  
+  ____ ____ _  _ ___  _    ____ 
+  |    |__| |\ | |  \ |    |___ 
+  |___ |  | | \| |__/ |___ |___ 
+
   Created & developed by djh20.
 */
 
@@ -17,10 +16,11 @@ const config: Config = require("../config.json");
 // Log splash art to console; some characters have been escaped so it looks
 // a bit weird in the editor.
 console.log(`
-____ ____ ____ ___  ___  ____ ____ ____ _   _ ____ ____ _  _
-|__/ |__| [__  |__] |__] |___ |__/ |__/  \\_/  |    |__| |\\ |
-|  \\ |  | ___] |    |__] |___ |  \\ |  \\   |   |___ |  | | \\|
-Delta Edition  ${version}
+____ ____ _  _ ___  _    ____ 
+|    |__| |\\ | |  \\ |    |___ 
+|___ |  | | \\| |__/ |___ |___ 
+Version: ${version}
+Disclaimer: This is a work in progress.
 `);
 
 const app = new Application(config)

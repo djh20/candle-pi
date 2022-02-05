@@ -1,6 +1,6 @@
 {
-  "name": "raspberry-can-delta",
-  "version": "1.0.4-dev.2",
+  "name": "candle",
+  "version": "1.0.4",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
