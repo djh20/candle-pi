@@ -1,4 +1,4 @@
-# RaspberryCAN Delta
-A simplified version of RaspberryCAN for reading vehicle information using a linux CAN interface.
+# CANdle
+An application for reading and displaying vehicle information.
 
-**This project is in very early development. It's not currently intended for public use.**
+**This project is in very early development; it's not currently intended for public use.**
