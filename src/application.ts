@@ -129,8 +129,13 @@ export default class Application {
             // Convert seconds to ms
             const time = (args.length >= 3) ? (parseInt(args[2]) * 1000) : null;
             await this.vehicle.tripManager.startPlayback(this.vehicle, time);
+            
           } else if (args[1] == "stop") {
             this.vehicle.tripManager.stopPlayback();
+            
+          } else if (args[1] == "speed") {
+            const speed = (args.length >= 3) ? (parseInt(args[2])) : 1;
+            this.vehicle.tripManager.playbackSpeed = speed;
 
           } else if (args[1] == "log") {
             const timePosition = this.vehicle.tripManager.rFile.timePosition;

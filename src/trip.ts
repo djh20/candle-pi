@@ -14,12 +14,14 @@ export default class TripManager {
   public playing: boolean;
 
   public playbackTimer?: NodeJS.Timer;
+  public playbackSpeed: number;
 
   private lastUpdateTime: number;
   
   constructor() {
     this.recording = false;
     this.playing = false;
+    this.playbackSpeed = 1;
   }
 
   public async startTrip(vehicle: Vehicle) {
@@ -78,7 +80,7 @@ export default class TripManager {
   private async updatePlayback(vehicle: Vehicle) {
     if (this.lastUpdateTime) {
       const deltaTime = Date.now() - this.lastUpdateTime;
-      this.rFile.timePosition += deltaTime;
+      this.rFile.timePosition += deltaTime * this.playbackSpeed;
     }
 
     await this.rFile.processKeyframes(vehicle);
