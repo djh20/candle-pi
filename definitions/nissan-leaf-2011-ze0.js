@@ -260,7 +260,7 @@ module.exports = {
           id: 'cc_status',
 
           // We invert the value because 0 is on and 1 is off.
-          process: (data) => [ !data[0] ]
+          process: (data) => [ data[0] ? 0 : 1 ],
         },
         {
           id: 'cc_fan_speed',
