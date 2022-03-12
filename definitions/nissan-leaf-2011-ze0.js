@@ -258,12 +258,13 @@ module.exports = {
       metrics: [
         {
           id: 'cc_status',
-
+          timeout: 1000,
           // We invert the value because 0 is on and 1 is off.
           process: (data) => [ data[0] ? 0 : 1 ],
         },
         {
           id: 'cc_fan_speed',
+          timeout: 1000,
           process: (data) => [ (data[4] & 0xF8) / 8 ]
         }
       ]
