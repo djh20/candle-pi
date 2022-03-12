@@ -264,7 +264,7 @@ module.exports = {
         },
         {
           id: 'cc_fan_speed',
-          process: (data) => [ (data[4] & 0xF0) / 8 ]
+          process: (data) => [ (data[4] & 0xF8) / 8 ]
         }
       ]
     }
