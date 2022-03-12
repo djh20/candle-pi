@@ -258,7 +258,9 @@ module.exports = {
       metrics: [
         {
           id: 'cc_status',
-          process: (data) => [ data[0] ]
+
+          // We invert the value because 0 is on and 1 is off.
+          process: (data) => [ !data[0] ]
         },
         {
           id: 'cc_fan_speed',
