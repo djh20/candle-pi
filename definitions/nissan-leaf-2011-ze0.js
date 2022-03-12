@@ -238,7 +238,7 @@ module.exports = {
     },
     {
       id: 0x54c,
-      name: 'Climate',
+      name: 'AC Auto Amp (100ms)',
       metrics: [
         {
           id: 'ambient_temp',
@@ -254,10 +254,14 @@ module.exports = {
     },
     {
       id: 0x54b,
-      name: 'Climate',
+      name: 'AC Auto Amp (100ms)',
       metrics: [
         {
-          id: 'climate_fan_speed',
+          id: 'cc_status',
+          process: (data) => [ data[0] ]
+        },
+        {
+          id: 'cc_fan_speed',
           process: (data) => [ (data[4] & 0xF0) / 8 ]
         }
       ]
