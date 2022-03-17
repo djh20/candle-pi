@@ -1,6 +1,6 @@
 {
   "name": "candle",
-  "version": "1.0.6-dev.1",
+  "version": "1.0.6-dev.2",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
