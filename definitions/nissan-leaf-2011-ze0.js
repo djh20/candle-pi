@@ -1,5 +1,5 @@
 const whPerGid = 80;
-const kmPerKwh = 6.5; // original = 7.1
+const kmPerKwh = 6.2; // original = 7.1
 
 module.exports = {
   name: 'Nissan Leaf 2011 (ZE0)',
