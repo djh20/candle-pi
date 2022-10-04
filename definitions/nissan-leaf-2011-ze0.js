@@ -190,7 +190,7 @@ module.exports = {
         {
           id: 'wheel_speed',
           precision: 2,
-          cooldown: 50,
+          cooldown: 100,
           defaultValues: [0, 0, 0],
           process: (data) => [ 
             ((data[4] << 8) | data[5]) / 100, // rear
