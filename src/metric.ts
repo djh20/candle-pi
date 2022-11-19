@@ -25,7 +25,7 @@ export default class Metric extends EventEmitter {
     this.notify();
   }
   
-  public update(values: number[], ignoreCooldown?: boolean) {
+  public update(values: number[], force?: boolean) {
     // Sometimes null is returned from process functions in the definition file.
     // This happens when the data cannot be processed, so we should just ignore
     // the value (which keeps the previous state).
@@ -46,7 +46,7 @@ export default class Metric extends EventEmitter {
       }
     }
 
-    if (this.definition.timeout) {
+    if (this.definition.timeout && !force) {
       if (this.timeoutTimer) {
         clearTimeout(this.timeoutTimer);
       }
@@ -61,7 +61,7 @@ export default class Metric extends EventEmitter {
     const changed = !arraysEqual(this.values, values);
 
     if (changed) {
-      if (this.definition.cooldown && !ignoreCooldown) {
+      if (this.definition.cooldown && !force) {
         let timeSinceLastChange = Date.now() - this.lastChangeTime;
         if (timeSinceLastChange < this.definition.cooldown) return;
       }
