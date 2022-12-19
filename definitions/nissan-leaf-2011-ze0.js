@@ -1,6 +1,9 @@
 const whPerGid = 80;
 const kmPerKwh = 6.2; // original = 7.1
 
+const newBatteryCapacity = 24;
+const maxSocPercent = 90;
+
 module.exports = {
   name: 'Nissan Leaf 2011 (ZE0)',
   getStatus: (metrics) => {
@@ -156,6 +159,30 @@ module.exports = {
               const tripDistance = vehicle.metrics.get('gps_trip_distance');
               if (tripDistance) tripDistance.update([0]);
             }
+          }
+        },
+        {
+          id: 'remaining_charge_time',
+          suffix: 'minutes',
+          cooldown: 20000,
+          process: (data, vehicle) => {
+            const charging = vehicle.metrics.get('charging').values[0] > 0;
+            if (!charging) return [0];
+            
+            const powerInput = -vehicle.metrics.get('power_output').values[0];
+            if (powerInput <= 0) return [0];
+
+            const soc = vehicle.metrics.get('soc_percent').values[0];
+            const soh = vehicle.metrics.get('soh').values[0];
+            
+            const batteryCapacity = newBatteryCapacity * soh;
+            
+            const percentUntilFull = Math.max(maxSocPercent - soc, 0); 
+            
+            const energyRequired = batteryCapacity * (percentUntilFull/100)
+            const chargeTime = Math.round(energyRequired / powerInput);
+
+            return [chargeTime];
           }
         }
       ]
