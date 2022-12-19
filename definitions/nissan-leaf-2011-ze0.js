@@ -175,14 +175,15 @@ module.exports = {
             const soc = vehicle.metrics.get('soc_percent').values[0];
             const soh = vehicle.metrics.get('soh').values[0];
             
-            const batteryCapacity = newBatteryCapacity * soh;
+            const batteryCapacity = newBatteryCapacity * (soh/100);
             
-            const percentUntilFull = Math.max(maxSocPercent - soc, 0); 
+            const percentUntilFull = Math.max(maxSocPercent - soc, 0);
             
-            const energyRequired = batteryCapacity * (percentUntilFull/100)
-            const chargeTime = Math.round(energyRequired / powerInput);
-
-            return [chargeTime];
+            const energyRequired = batteryCapacity * (percentUntilFull/100);
+            const chargeTimeHours = energyRequired / powerInput;
+            const chargeTimeMinutes = Math.round(chargeTimeHours * 60);
+            
+            return [chargeTimeMinutes];
           }
         }
       ]
