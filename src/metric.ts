@@ -1,14 +1,16 @@
 import { EventEmitter } from "events";
 import { MetricDefinition } from "./definitions";
 import { arraysEqual, getArrayAverage } from "./util/array";
+import { clamp, lerp } from "./util/math";
 
 export default class Metric extends EventEmitter {
   public index: number;
   public values: number[];
-  public history: number[][];
+  public lerpedValues: number[];
   public definition: MetricDefinition;
 
   private defaultValues: number[];
+  private lastUpdateTime: number;
   private lastChangeTime: number;
   private timeoutTimer?: NodeJS.Timer;
 
@@ -17,12 +19,13 @@ export default class Metric extends EventEmitter {
 
     this.defaultValues = definition.defaultValues || [0];
     this.definition = definition;
-    this.history = [];
     this.reset();
   }
 
   public reset() {
     this.values = this.defaultValues;
+    this.lerpedValues = this.defaultValues;
+    this.lastUpdateTime = 0;
     this.lastChangeTime = 0;
     this.notify();
   }
@@ -32,6 +35,9 @@ export default class Metric extends EventEmitter {
     // This happens when the data cannot be processed, so we should just ignore
     // the value (which keeps the previous state).
     if (values == null) return;
+
+    const timeSinceLastUpdate = Date.now() - this.lastUpdateTime;
+    const lerpAmount = clamp(timeSinceLastUpdate/2000, 0, 1);
 
     for (let i = 0; i < values.length; i++) {
       if (this.definition.precision) {
@@ -46,12 +52,9 @@ export default class Metric extends EventEmitter {
         // dedicated rounding function to give more accuracy.
         values[i] = +values[i].toFixed(this.definition.precision);
       }
-
-      if (!this.history[i]) this.history[i] = [];
       
-      if (this.definition.maxHistory > 0) {
-        this.history[i].unshift(values[i]);
-        this.history[i].splice(this.definition.maxHistory);
+      if (this.definition.lerp) {
+        this.lerpedValues[i] = lerp(this.lerpedValues[i], values[i], lerpAmount);
       }
     }
 
@@ -66,6 +69,8 @@ export default class Metric extends EventEmitter {
       );
     }
 
+    this.lastUpdateTime = Date.now();
+
     // Check if value has changed since it was last set.
     const changed = !arraysEqual(this.values, values);
 
@@ -79,10 +84,6 @@ export default class Metric extends EventEmitter {
       this.values = values;
       this.notify();
     }
-  }
-
-  public getAverage(valueIndex: number = 0): number {
-    return getArrayAverage(this.history[valueIndex]);
   }
 
   private notify() {

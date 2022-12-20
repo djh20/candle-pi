@@ -2,7 +2,7 @@ const whPerGid = 80;
 const kmPerKwh = 6.2; // original = 7.1
 
 const newBatteryCapacity = 24;
-const maxSocPercent = 90;
+const maxSocPercent = 95;
 
 module.exports = {
   name: 'Nissan Leaf 2011 (ZE0)',
@@ -102,7 +102,7 @@ module.exports = {
           cooldown: 80,
           suffix: ' kW',
           precision: 2,
-          maxHistory: 50,
+          lerp: true,
           process: (data) => {
             const voltage = ((data[2] << 2) | (data[3] >> 6)) / 2.0;
             let current = ((data[0] << 3) | (data[1] & 0xe0) >> 5);
@@ -165,12 +165,12 @@ module.exports = {
         {
           id: 'remaining_charge_time',
           suffix: 'minutes',
-          cooldown: 5000,
+          cooldown: 10000,
           process: (data, vehicle) => {
             const charging = vehicle.metrics.get('charging').values[0] > 0;
             if (!charging) return [0];
             
-            const powerInput = -vehicle.metrics.get('power_output').getAverage();
+            const powerInput = -vehicle.metrics.get('power_output').lerpedValues[0];
             if (powerInput <= 0) return [0];
 
             const soc = vehicle.metrics.get('soc_percent').values[0];

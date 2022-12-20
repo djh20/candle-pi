@@ -49,6 +49,12 @@ export interface MetricDefinition {
   precision?: number;
 
   /**
+   * If enabled, the metric will offer a `lerpedValues` property which contains lerped
+   * versions of the metric's values.
+  */
+  lerp?: boolean
+
+  /**
    * For metric definitions that derive their values from CAN messages.
    * This method takes in a CAN message buffer and returns the corresponding 
    * value.
@@ -61,13 +67,6 @@ export interface MetricDefinition {
    * If the metric should be logged to the console whenever its value changes.
    */
   log?: boolean,
-
-  /**
-   * The maximum number of history values that can be kept in memory simultaneously. 
-   * This applies to each value in the metric individually. 
-   * The default value is 0 (no history is kept).
-   */
-  maxHistory?: number
 
   //name: string,
   //convert?: (value: number) => Uint8Array | Uint16Array,
