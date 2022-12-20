@@ -165,12 +165,12 @@ module.exports = {
         {
           id: 'remaining_charge_time',
           suffix: 'minutes',
-          cooldown: 20000,
+          cooldown: 5000,
           process: (data, vehicle) => {
             const charging = vehicle.metrics.get('charging').values[0] > 0;
             if (!charging) return [0];
             
-            const powerInput = -vehicle.metrics.get('power_output').values[0];
+            const powerInput = -vehicle.metrics.get('power_output').getAverage();
             if (powerInput <= 0) return [0];
 
             const soc = vehicle.metrics.get('soc_percent').values[0];

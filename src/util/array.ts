@@ -6,3 +6,7 @@ export function arraysEqual(a: any[], b: any[]): boolean {
   }
   return true;
 }
+
+export function getArrayAverage(arr: number[]): number {
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}

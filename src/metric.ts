@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { MetricDefinition } from "./definitions";
-import { arraysEqual } from "./util/array";
+import { arraysEqual, getArrayAverage } from "./util/array";
 
 export default class Metric extends EventEmitter {
   public index: number;
@@ -79,6 +79,10 @@ export default class Metric extends EventEmitter {
       this.values = values;
       this.notify();
     }
+  }
+
+  public getAverage(valueIndex: number = 0): number {
+    return getArrayAverage(this.history[valueIndex]);
   }
 
   private notify() {
