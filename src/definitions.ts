@@ -62,6 +62,13 @@ export interface MetricDefinition {
    */
   log?: boolean,
 
+  /**
+   * The maximum number of history values that can be kept in memory simultaneously. 
+   * This applies to each value in the metric individually. 
+   * The default value is 0 (no history is kept).
+   */
+  maxHistory?: number
+
   //name: string,
   //convert?: (value: number) => Uint8Array | Uint16Array,
   //instance?: MetricInstance;

@@ -102,6 +102,7 @@ module.exports = {
           cooldown: 80,
           suffix: ' kW',
           precision: 2,
+          maxHistory: 20,
           process: (data) => {
             const voltage = ((data[2] << 2) | (data[3] >> 6)) / 2.0;
             let current = ((data[0] << 3) | (data[1] & 0xe0) >> 5);

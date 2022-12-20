@@ -5,6 +5,7 @@ import { arraysEqual } from "./util/array";
 export default class Metric extends EventEmitter {
   public index: number;
   public values: number[];
+  public history: number[][];
   public definition: MetricDefinition;
 
   private defaultValues: number[];
@@ -16,6 +17,7 @@ export default class Metric extends EventEmitter {
 
     this.defaultValues = definition.defaultValues || [0];
     this.definition = definition;
+    this.history = [];
     this.reset();
   }
 
@@ -31,18 +33,25 @@ export default class Metric extends EventEmitter {
     // the value (which keeps the previous state).
     if (values == null) return;
 
-    if (this.definition.precision) {
-      // Round the value to have 'precision' number of decimal places.
+    for (let i = 0; i < values.length; i++) {
+      if (this.definition.precision) {
+        // Round the value to have 'precision' number of decimal places.
 
-      // Note the plus sign drops any "extra" zeroes at the end (think "0 + foo").
-      // It changes the result from a string into a number again, which means
-      // that it uses only as many digits as necessary.
+        // Note the plus sign drops any "extra" zeroes at the end (think "0 + foo").
+        // It changes the result from a string into a number again, which means
+        // that it uses only as many digits as necessary.
 
-      // This method rounds incorrectly in some cases, but it should be accurate
-      // enough for this use case. Later on, this could be replaced with a
-      // dedicated rounding function to give more accuracy.
-      for (let i = 0; i < values.length; i++) {
+        // This method rounds incorrectly in some cases, but it should be accurate
+        // enough for this use case. Later on, this could be replaced with a
+        // dedicated rounding function to give more accuracy.
         values[i] = +values[i].toFixed(this.definition.precision);
+      }
+
+      if (!this.history[i]) this.history[i] = [];
+      
+      if (this.definition.maxHistory > 0) {
+        this.history[i].unshift(values[i]);
+        this.history[i].splice(this.definition.maxHistory);
       }
     }
 
