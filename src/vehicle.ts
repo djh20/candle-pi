@@ -79,7 +79,7 @@ export default class Vehicle extends EventEmitter {
 
     topicDef.metrics.forEach(metricDef => {
       const metric = this.metrics.get(metricDef.id);
-      metric.update(metricDef.process(frame.data, this));
+      metric.update(metricDef.process(frame.data, this, metric.values));
       //logger.info("can", `${metricDef.id}: ${metric.value}`);
       //metric.instance.setValue( metric.process(frame.data) );
     });

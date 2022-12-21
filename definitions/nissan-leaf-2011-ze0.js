@@ -142,20 +142,14 @@ module.exports = {
       name: 'Vehicle Control Module (10ms)',
       metrics: [
         {
-          id: 'charging',
-
-          // Reset metric values after no data recieved for 10 seconds.
-          // This is because we don't know if the car is still plugged in
-          // after the vehicle CAN system goes to sleep.
-          timeout: 10000,
-          
+          id: 'plugged_in',
           process: (data, vehicle) => {
             const val = (data[6] & 0xE0);
-            const charging = val == 192 || val == 224 ? 1 : 0;
-            return [charging];
+            const pluggedIn = val == 192 || val == 224 ? 1 : 0;
+            return [pluggedIn];
           },
           onChange: (values, vehicle) => {
-            // Reset trip distance when car starts charging.
+            // Reset trip distance when car is plugged in.
             if (values[0] == 1) {
               const tripDistance = vehicle.metrics.get('gps_trip_distance');
               if (tripDistance) tripDistance.update([0]);
@@ -163,11 +157,23 @@ module.exports = {
           }
         },
         {
+          id: 'charge_status',
+          process: (data, vehicle, currentValues) => {
+            const pluggedIn = vehicle.metrics.get('plugged_in').values[0] == 1;
+            if (!pluggedIn) return [0];
+
+            const powerInput = -vehicle.metrics.get('power_output').values[0];
+
+            if (powerInput >= 1) return [1];
+            else if (powerInput <= 0 && currentValues[0] == 1) return [2];
+          }
+        },
+        {
           id: 'remaining_charge_time',
           suffix: 'minutes',
           cooldown: 10000,
           process: (data, vehicle) => {
-            const charging = vehicle.metrics.get('charging').values[0] > 0;
+            const charging = vehicle.metrics.get('charge_status').values[0] == 1;
             if (!charging) return [0];
             
             const powerInput = -vehicle.metrics.get('power_output').lerpedValues[0];

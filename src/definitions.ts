@@ -59,7 +59,7 @@ export interface MetricDefinition {
    * This method takes in a CAN message buffer and returns the corresponding 
    * value.
    */
-  process?: (data: Buffer, vehicle: Vehicle) => number[],
+  process?: (data: Buffer, vehicle: Vehicle, currentValues: number[]) => number[],
 
   onChange?: (values: number[], vehicle: Vehicle) => void,
 
