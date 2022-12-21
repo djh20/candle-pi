@@ -26,6 +26,21 @@ module.exports = {
         {
           id: 'gear',
           process: (data) => [ (data[0] & 0xF0) >> 4 ],
+          onChange: (values, vehicle) => {
+            // Update 'range_at_last_charge' metric when the car is taken out of park
+            // for the first time after charging.
+            if (values[0] > 1) {
+              const rangeAtLastCharge = vehicle.metrics.get('range_at_last_charge');
+              if (!rangeAtLastCharge) return null;
+
+              const range = vehicle.metrics.get('range');
+              if (!range) return null;
+
+              if (rangeAtLastCharge.values[0] == 0) {
+                rangeAtLastCharge.update([range.values[0]]);
+              }
+            }
+          }
         },
         {
           id: 'powered',
@@ -90,6 +105,10 @@ module.exports = {
             const range = Math.round(kWh*kmPerKwh);
             return [range];
           }
+        },
+        {
+          id: 'range_at_last_charge',
+          suffix: 'km'
         }
       ]
     },
@@ -149,10 +168,13 @@ module.exports = {
             return [pluggedIn];
           },
           onChange: (values, vehicle) => {
-            // Reset gps distance when car is plugged in.
+            // Reset gps distance & range at last charge when car is plugged in.
             if (values[0] == 1) {
               const tripDistance = vehicle.metrics.get('gps_distance');
               if (tripDistance) tripDistance.update([0]);
+              
+              const rangeAtLastCharge = vehicle.metrics.get('range_at_last_charge');
+              if (rangeAtLastCharge) rangeAtLastCharge.update([0]);
             }
           }
         },
