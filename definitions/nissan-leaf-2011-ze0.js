@@ -138,6 +138,10 @@ module.exports = {
             
             const power = (current * voltage)/1000;
             
+            // The car seems to report an invalid value during startup. This check ignores
+            // any values that are above 100 or below -100.
+            if (power > 100 || power < -100) return null;
+            
             return [power];
           },
         }
