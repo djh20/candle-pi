@@ -113,7 +113,8 @@ export default class Vehicle extends EventEmitter {
       const distanceMetric = new Metric({id: "gps_trip_distance"});
       const positionMetric = new Metric({
         id: "gps_position",
-        defaultValues: [0, 0]
+        defaultValues: [0, 0],
+        precision: 6
       });
 
       this.registerMetric(lockedMetric);
