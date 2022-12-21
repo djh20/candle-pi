@@ -149,9 +149,9 @@ module.exports = {
             return [pluggedIn];
           },
           onChange: (values, vehicle) => {
-            // Reset trip distance when car is plugged in.
+            // Reset gps distance when car is plugged in.
             if (values[0] == 1) {
-              const tripDistance = vehicle.metrics.get('gps_trip_distance');
+              const tripDistance = vehicle.metrics.get('gps_distance');
               if (tripDistance) tripDistance.update([0]);
             }
           }
