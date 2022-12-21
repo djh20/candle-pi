@@ -184,7 +184,7 @@ module.exports = {
             const pluggedIn = vehicle.metrics.get('plugged_in').values[0] == 1;
             if (!pluggedIn) return [0];
 
-            const powerInput = -vehicle.metrics.get('power_output').values[0];
+            const powerInput = -vehicle.metrics.get('power_output').lerpedValues[0];
 
             if (powerInput >= 1) return [1];
             else if (powerInput <= 0 && currentValues[0] == 1) return [2];
