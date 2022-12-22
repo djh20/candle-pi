@@ -26,8 +26,8 @@ export default class Metric extends EventEmitter {
     // We use the spread syntax here because otherwise javascript binds the objects
     // together, resulting in the defaultValues being modified whenever values or
     // lerpedValues is modified.
-    this.values = this.defaultValues;
-    this.lerpedValues = this.defaultValues;
+    this.values = [...this.defaultValues];
+    this.lerpedValues = [...this.defaultValues];
     this.lastUpdateTime = 0;
     this.lastChangeTime = 0;
     if (shouldNotify) this.notify();
