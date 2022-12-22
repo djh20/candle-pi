@@ -39,7 +39,6 @@ export default class TripManager {
 
     // Add an entry for every metric so they start on the correct state.
     vehicle.metrics.forEach(metric => {
-      //metric.setValue(0, true);
       this.addEntry(metric);
     });
   }

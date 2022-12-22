@@ -64,13 +64,6 @@ module.exports = {
           suffix: '%',
           process: (data) => [ (data[4] & 0xFE) >> 1 ] 
         },
-
-        // Only has whole number precision so not very smooth.
-        /*{
-          id: 'battery_avg_temp',
-          log: true,
-          process: (data) => [ data[3] - 40 ]
-        },*/
       ]
     },
     {
@@ -184,14 +177,12 @@ module.exports = {
           suffix: '°C',
           precision: 2,
           process: (data) => [ (5.0 / 9.0) * (data[1] - 32) ],
-          //convert: (value) => new Uint16Array([value*100])
         },
         {
           id: 'inverter_temp',
           suffix: '°C',
           precision: 2,
           process: (data) => [ (5.0 / 9.0) * (data[2] - 32) ],
-          //convert: (value) => new Uint16Array([value*100])
         }
       ]
     },
@@ -207,7 +198,6 @@ module.exports = {
             if (data[6] == 0xff) return null;
             return [ (data[6]) / 2.0 - 40 ];
           },
-          //convert: (value) => new Uint16Array([value*100])
         }
       ]
     },

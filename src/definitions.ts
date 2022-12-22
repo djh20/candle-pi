@@ -5,7 +5,6 @@ import Vehicle from "./vehicle";
  * The structure of a vehicle definition file.
  */
 export interface VehicleDefinition {
-  //id?: string,
   name?: string,
   getStatus?: (metrics: Map<string, Metric>) => VehicleStatus,
   topics?: TopicDefinition[];
@@ -76,57 +75,5 @@ export interface MetricDefinition {
   /**
    * If the metric should be logged to the console whenever its state changes.
    */
-  log?: boolean,
-
-  //name: string,
-  //convert?: (value: number) => Uint8Array | Uint16Array,
-  //instance?: MetricInstance;
-}
-
-
-/**
- * This is for metric definitions that derive their state from CAN messages. This
- * version includes a 'process' method, which takes in the CAN message buffer
- * and returns the corresponding state.
- * 
- * This will only work with metrics that are defined in the vehicle definition
- * file, as the CAN message id is defined in the parent 'topic' object.
- */
-/*
-export interface MetricCanDefinition extends MetricDefinition {
-  process: (buffer: Buffer) => number,
-}
-*/
-
-/*
-export interface Metric {
-  id: string,
-}
-
-export interface CanMetric extends Metric {
-  //name: string,
-  //log?: boolean,
-  suffix?: string,
-  interval?: number,
-  process?: (buffer: Buffer) => number,
-  convert?: (value: number) => Uint8Array | Uint16Array,
-  //instance?: MetricInstance;
-}
-*/
-
-/*
-export class MetricInstance {
-  public value: number = 0;
-  
-  public setValue(value: number) {
-    // Round to max of 2 decimal places.
-    value = Math.round((value + Number.EPSILON) * 100) / 100;
-
-    this.value = value;
-  }
-}
-*/
-
-export interface MetricState {
-  value: number;
+  log?: boolean
 }

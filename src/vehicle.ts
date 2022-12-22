@@ -95,22 +95,14 @@ export default class Vehicle extends EventEmitter {
       if (metricDef.process) {
         metric.setState(metricDef.process(frame.data, this, metric.state));
       }
-      //logger.info("can", `${metricDef.id}: ${metric.value}`);
-      //metric.instance.setValue( metric.process(frame.data) );
     });
   }
 
   /**
-   * Sets the definition for the vehicle and assigns a new instance for
-   * each metric.
+   * Sets the definition for the vehicle and registers each metric.
    * @param definition The vehicle definition to use.
    */
   public async loadDefinition(definition: VehicleDefinition) {
-    // Assign a metric instance to each metric. This instance stores the
-    // current value and handles changing it.
-    // This also means that the definition can be reloaded by just assigning
-    // new instances, as no other values are modified.
-
     logger.info("vehicle", `Loading definition: ${definition.name} ...`);
     
     this.metrics.clear();

@@ -42,10 +42,8 @@ export default class Application {
     const definitionPath = 
       path.resolve(this.paths.definitions, this.config.definition + ".js");
     
-    // Load the definition file using require and assign its id because that's
-    // not included by default in the file itself.
+    // Load the vehicle definition file.
     const definition: VehicleDefinition = require(definitionPath);
-    //definition.id = this.config.definition;
     
     await this.vehicle.loadDefinition(definition);
     this.vehicle.connect(this.config.interface);
