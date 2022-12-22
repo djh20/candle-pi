@@ -5,11 +5,11 @@ import { clamp, lerp } from "./util/math";
 
 export default class Metric extends EventEmitter {
   public index: number;
-  public values: number[];
-  public lerpedValues: number[];
+  public state: number[];
+  public lerpedState: number[];
   public definition: MetricDefinition;
 
-  private defaultValues: number[];
+  private defaultState: number[];
   private lastUpdateTime: number;
   private lastChangeTime: number;
   private timeoutTimer?: NodeJS.Timer;
@@ -17,32 +17,31 @@ export default class Metric extends EventEmitter {
   constructor(definition: MetricDefinition) {
     super();
 
-    this.defaultValues = definition.defaultValues || [0];
+    this.defaultState = definition.defaultState || [0];
     this.definition = definition;
     this.reset();
   }
 
   public reset(shouldNotify?: boolean) {
     // We use the spread syntax here because otherwise javascript binds the objects
-    // together, resulting in the defaultValues being modified whenever values or
-    // lerpedValues is modified.
-    this.values = [...this.defaultValues];
-    this.lerpedValues = [...this.defaultValues];
+    // together, resulting in the defaultState being modified whenever state or
+    // lerpedState is modified.
+    this.state = [...this.defaultState];
+    this.lerpedState = [...this.defaultState];
     this.lastUpdateTime = 0;
     this.lastChangeTime = 0;
     if (shouldNotify) this.notify();
   }
   
-  public update(values: number[], force?: boolean) {
+  public setState(newState: number[], force?: boolean) {
     // Sometimes null is returned from process functions in the definition file.
-    // This happens when the data cannot be processed, so we should just ignore
-    // the value (which keeps the previous state).
-    if (values == null) return;
+    // This happens when the data cannot be processed, so we just keep the current state.
+    if (newState == null) return;
 
     const timeSinceLastUpdate = Date.now() - this.lastUpdateTime;
     const lerpAmount = clamp(timeSinceLastUpdate/2000, 0, 1);
 
-    for (let i = 0; i < values.length; i++) {
+    for (let i = 0; i < newState.length; i++) {
       if (this.definition.precision) {
         // Round the value to have 'precision' number of decimal places.
 
@@ -53,11 +52,11 @@ export default class Metric extends EventEmitter {
         // This method rounds incorrectly in some cases, but it should be accurate
         // enough for this use case. Later on, this could be replaced with a
         // dedicated rounding function to give more accuracy.
-        values[i] = +values[i].toFixed(this.definition.precision);
+        newState[i] = +newState[i].toFixed(this.definition.precision);
       }
       
       if (this.definition.lerp) {
-        this.lerpedValues[i] = lerp(this.lerpedValues[i], values[i], lerpAmount);
+        this.lerpedState[i] = lerp(this.lerpedState[i], newState[i], lerpAmount);
       }
     }
 
@@ -74,8 +73,8 @@ export default class Metric extends EventEmitter {
 
     this.lastUpdateTime = Date.now();
 
-    // Check if value has changed since it was last set.
-    const changed = !arraysEqual(this.values, values);
+    // Check if new state is different than the current state.
+    const changed = !arraysEqual(this.state, newState);
 
     if (changed) {
       if (this.definition.cooldown && !force) {
@@ -84,17 +83,17 @@ export default class Metric extends EventEmitter {
       }
 
       this.lastChangeTime = Date.now();
-      this.values = values;
+      this.state = newState;
       this.notify();
     }
   }
 
   private notify() {
-    this.emit("changed", this.values);
+    this.emit("changed", this.state);
   }
 
   get jsonData(): string {
-    return JSON.stringify([this.index, this.values]);
+    return JSON.stringify([this.index, this.state]);
   }
 }
 

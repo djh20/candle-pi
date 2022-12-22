@@ -54,15 +54,15 @@ export default class Vehicle extends EventEmitter {
     metric.index = this.metrics.size;
     this.metrics.set(metric.definition.id, metric);
 
-    // Listen for whenever the metric value changes.
-    metric.on("changed", (values: number[]) => {
+    // Listen for whenever the metric's state changes.
+    metric.on("changed", (state: number[]) => {
       if (metric.definition.log) {
-        logger.info("vehicle", `${metric.definition.id}: ${values}`)
+        logger.info("vehicle", `${metric.definition.id}: ${state}`)
       }
       
       if (!this.tripManager.playing) {
         if (metric.definition.onChange) {
-          metric.definition.onChange(values, this);
+          metric.definition.onChange(state, this);
         }
 
         for (let otherMetric of this.metrics.values()) {
@@ -71,8 +71,8 @@ export default class Vehicle extends EventEmitter {
           if (!dependencies) continue;
           if (!dependencies.includes(metric.definition.id)) continue;
   
-          otherMetric.update(
-            otherMetric.definition.process(null, this, otherMetric.values)
+          otherMetric.setState(
+            otherMetric.definition.process(null, this, otherMetric.state)
           );
         }
       }
@@ -93,7 +93,7 @@ export default class Vehicle extends EventEmitter {
     topicDef.metrics.forEach(metricDef => {
       const metric = this.metrics.get(metricDef.id);
       if (metricDef.process) {
-        metric.update(metricDef.process(frame.data, this, metric.values));
+        metric.setState(metricDef.process(frame.data, this, metric.state));
       }
       //logger.info("can", `${metricDef.id}: ${metric.value}`);
       //metric.instance.setValue( metric.process(frame.data) );
@@ -134,7 +134,7 @@ export default class Vehicle extends EventEmitter {
       const distanceMetric = new Metric({id: "gps_distance"});
       const positionMetric = new Metric({
         id: "gps_position",
-        defaultValues: [0, 0],
+        defaultState: [0, 0],
         precision: 6
       });
 
@@ -145,16 +145,16 @@ export default class Vehicle extends EventEmitter {
       let connected = await this.gpsManager.connect(this.app.config.gps.port);
       if (connected) {
         this.gpsManager.on("lock", (locked: boolean) => {
-          lockedMetric.update([locked ? 1 : 0]);
+          lockedMetric.setState([locked ? 1 : 0]);
         });
 
         this.gpsManager.on("move", (lat: number, lng: number, distance: number) => {
           const status = this.definition.getStatus(this.metrics);
           if (status.moving) {
-            const totalDistance: number = distanceMetric.values[0] + distance;
-            distanceMetric.update([totalDistance]);
+            const totalDistance: number = distanceMetric.state[0] + distance;
+            distanceMetric.setState([totalDistance]);
           }
-          positionMetric.update([lat, lng]);
+          positionMetric.setState([lat, lng]);
         });
 
         this.gpsManager.listen();

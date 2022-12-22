@@ -37,7 +37,7 @@ export default class TripManager {
     this.recording = true;
     this.playing = false;
 
-    // Add an entry for every metric so they start on the correct value.
+    // Add an entry for every metric so they start on the correct state.
     vehicle.metrics.forEach(metric => {
       //metric.setValue(0, true);
       this.addEntry(metric);
@@ -59,7 +59,7 @@ export default class TripManager {
   public addEntry(metric: Metric) {
     if (this.rFile && this.recording) {
       const timeOffset = Date.now() - this.rFile.startTime;
-      this.rFile.write(`${timeOffset} ${metric.index} ${metric.values}\n`);
+      this.rFile.write(`${timeOffset} ${metric.index} ${metric.state}\n`);
     }
   }
 
@@ -192,7 +192,7 @@ class RecordingFile {
           const id = metricIds[i];
           const data = latestMetricData[i];
           const metric = vehicle.metrics.get(id);
-          if (metric) metric.update(data, true);
+          if (metric) metric.setState(data, true);
         }
         resolve();
       });
@@ -205,7 +205,7 @@ class RecordingFile {
      
       if (this.timePosition >= keyframe.timeOffset) {
         const metric = vehicle.metrics.get(keyframe.metricId);
-        if (metric) metric.update(keyframe.data, true);
+        if (metric) metric.setState(keyframe.data, true);
 
         // Remove the keyframe from the array and decrement i as everything to
         // the right has been shifted down by one index.

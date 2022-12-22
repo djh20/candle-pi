@@ -15,7 +15,7 @@ module.exports = {
 
     return {
       // Check that at least one value in the wheel_speed metric is above 0.
-      moving: speedMetric ? speedMetric.values.some(v => v > 0) : false
+      moving: speedMetric ? speedMetric.state.some(v => v > 0) : false
     };
   },
   topics: [
@@ -30,8 +30,8 @@ module.exports = {
         {
           id: 'powered',
           process: (data) => [ (data[1] & 0x40) >> 6 ],
-          onChange: (values, vehicle) => {
-            if (values[0] == 1) {
+          onChange: (state, vehicle) => {
+            if (state[0] == 1) {
               vehicle.tripManager.startTrip(vehicle);
             } else {
               vehicle.tripManager.endTrip();
@@ -100,7 +100,7 @@ module.exports = {
             const power = (current * voltage)/1000;
             
             // The car seems to report an invalid value during startup. This check ignores
-            // any values that are above 100 or below -100.
+            // any state that are above 100 or below -100.
             if (power > 100 || power < -100) return null;
             
             return [power];
@@ -132,11 +132,11 @@ module.exports = {
             const pluggedIn = val == 192 || val == 224 ? 1 : 0;
             return [pluggedIn];
           },
-          onChange: (values, vehicle) => {
+          onChange: (state, vehicle) => {
             // Reset gps distance when car is plugged in.
-            if (values[0] == 1) {
+            if (state[0] == 1) {
               const tripDistance = vehicle.metrics.get('gps_distance');
-              if (tripDistance) tripDistance.update([0]);
+              if (tripDistance) tripDistance.setState([0]);
             }
           }
         }
@@ -150,7 +150,7 @@ module.exports = {
           id: 'wheel_speed',
           precision: 2,
           cooldown: 100,
-          defaultValues: [0, 0, 0],
+          defaultState: [0, 0, 0],
           process: (data) => [ 
             ((data[4] << 8) | data[5]) / 100, // rear
             ((data[2] << 8) | data[3]) / 208, // left
@@ -229,7 +229,7 @@ module.exports = {
       suffix: 'km',
       dependencies: ['soc_gids'],
       process: (data, vehicle) => {
-        const gids = vehicle.metrics.get('soc_gids').values[0];
+        const gids = vehicle.metrics.get('soc_gids').state[0];
         
         // Range Calculation
         // - Division is to convert Wh to kWh
@@ -245,28 +245,28 @@ module.exports = {
       id: 'range_at_last_charge',
       suffix: 'km',
       dependencies: ['plugged_in', 'gear'],
-      process: (data, vehicle, currentValues) => {
-        const pluggedIn = vehicle.metrics.get('plugged_in').values[0] == 1;
+      process: (data, vehicle, currentState) => {
+        const pluggedIn = vehicle.metrics.get('plugged_in').state[0] == 1;
         if (pluggedIn) return [0];
 
-        const parked = vehicle.metrics.get('gear').values[0] <= 1;
+        const parked = vehicle.metrics.get('gear').state[0] <= 1;
         if (parked) return null;
 
-        const range = vehicle.metrics.get('range').values[0];
-        if (currentValues[0] == 0) return [range];
+        const range = vehicle.metrics.get('range').state[0];
+        if (currentState[0] == 0) return [range];
       }
     },
     {
       id: 'charge_status',
       dependencies: ['plugged_in', 'power_output'],
-      process: (data, vehicle, currentValues) => {
-        const pluggedIn = vehicle.metrics.get('plugged_in').values[0] == 1;
+      process: (data, vehicle, currentState) => {
+        const pluggedIn = vehicle.metrics.get('plugged_in').state[0] == 1;
         if (!pluggedIn) return [0];
 
-        const powerInput = -vehicle.metrics.get('power_output').values[0];
+        const powerInput = -vehicle.metrics.get('power_output').state[0];
 
         if (powerInput >= 1) return [1];
-        else if (powerInput <= 0 && currentValues[0] == 1) return [2];
+        else if (powerInput <= 0 && currentState[0] == 1) return [2];
       }
     },
     {
@@ -275,14 +275,14 @@ module.exports = {
       dependencies: ['charge_status', 'power_output', 'soc_percent', 'soh'],
       cooldown: 5000,
       process: (data, vehicle) => {
-        const charging = vehicle.metrics.get('charge_status').values[0] == 1;
+        const charging = vehicle.metrics.get('charge_status').state[0] == 1;
         if (!charging) return [0];
         
-        const powerInput = -vehicle.metrics.get('power_output').lerpedValues[0];
+        const powerInput = -vehicle.metrics.get('power_output').lerpedState[0];
         if (powerInput <= 0) return [0];
 
-        const soc = vehicle.metrics.get('soc_percent').values[0];
-        const soh = vehicle.metrics.get('soh').values[0];
+        const soc = vehicle.metrics.get('soc_percent').state[0];
+        const soh = vehicle.metrics.get('soh').state[0];
         
         const batteryCapacity = newBatteryCapacity * (soh/100);
         

@@ -102,7 +102,7 @@ export default class Application {
     this.expressApp.get('/api/vehicle/metrics', (req, res) => {
       let body = {};
       this.vehicle.metrics.forEach((metric) => {
-        body[metric.definition.id] = metric.values;
+        body[metric.definition.id] = metric.state;
       });
       res.send(body);
     });
@@ -145,9 +145,9 @@ export default class Application {
       } else if (topic == "metric") {
         if (args[0] == "set") {
           const metric = this.vehicle.metrics.get(args[1]);
-          const values = args[2].split(',').map(e => parseFloat(e));
+          const state = args[2].split(',').map(e => parseFloat(e));
 
-          if (metric) metric.update(values, true);
+          if (metric) metric.setState(state, true);
         }
       }
     } catch(err) {
