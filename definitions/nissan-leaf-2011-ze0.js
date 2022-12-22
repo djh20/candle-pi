@@ -25,22 +25,7 @@ module.exports = {
       metrics: [
         {
           id: 'gear',
-          process: (data) => [ (data[0] & 0xF0) >> 4 ],
-          onChange: (values, vehicle) => {
-            // Update 'range_at_last_charge' metric when the car is taken out of park
-            // for the first time after charging.
-            if (values[0] > 1) {
-              const rangeAtLastCharge = vehicle.metrics.get('range_at_last_charge');
-              if (!rangeAtLastCharge) return null;
-
-              const range = vehicle.metrics.get('range');
-              if (!range) return null;
-
-              if (rangeAtLastCharge.values[0] == 0) {
-                rangeAtLastCharge.update([range.values[0]]);
-              }
-            }
-          }
+          process: (data) => [ (data[0] & 0xF0) >> 4 ]
         },
         {
           id: 'powered',
@@ -86,30 +71,6 @@ module.exports = {
           log: true,
           process: (data) => [ data[3] - 40 ]
         },*/
-        {
-          id: 'range',
-          suffix: 'km',
-          process: (data, vehicle) => {
-            // This function is called after the previous metrics in this topic.
-            // That means soc_gids will be set prior and we can use it for this
-            // calculation.
-
-            // Range Calculation (roughly 81km for 171 gids)
-            // - Division is to convert Wh to kWh
-            // - Minus 1.15kWh is reserved energy that cannot be used.
-            const gids = vehicle.metrics.get('soc_gids').values[0];
-            
-            let kWh = ((gids*whPerGid)/1000.0)-1.15;
-            if (kWh < 0) kWh = 0;
-
-            const range = Math.round(kWh*kmPerKwh);
-            return [range];
-          }
-        },
-        {
-          id: 'range_at_last_charge',
-          suffix: 'km'
-        }
       ]
     },
     {
@@ -172,51 +133,11 @@ module.exports = {
             return [pluggedIn];
           },
           onChange: (values, vehicle) => {
-            // Reset gps distance & range at last charge when car is plugged in.
+            // Reset gps distance when car is plugged in.
             if (values[0] == 1) {
               const tripDistance = vehicle.metrics.get('gps_distance');
               if (tripDistance) tripDistance.update([0]);
-              
-              const rangeAtLastCharge = vehicle.metrics.get('range_at_last_charge');
-              if (rangeAtLastCharge) rangeAtLastCharge.update([0]);
             }
-          }
-        },
-        {
-          id: 'charge_status',
-          process: (data, vehicle, currentValues) => {
-            const pluggedIn = vehicle.metrics.get('plugged_in').values[0] == 1;
-            if (!pluggedIn) return [0];
-
-            const powerInput = -vehicle.metrics.get('power_output').lerpedValues[0];
-
-            if (powerInput >= 1) return [1];
-            else if (powerInput <= 0 && currentValues[0] == 1) return [2];
-          }
-        },
-        {
-          id: 'remaining_charge_time',
-          suffix: 'minutes',
-          cooldown: 10000,
-          process: (data, vehicle) => {
-            const charging = vehicle.metrics.get('charge_status').values[0] == 1;
-            if (!charging) return [0];
-            
-            const powerInput = -vehicle.metrics.get('power_output').lerpedValues[0];
-            if (powerInput <= 0) return [0];
-
-            const soc = vehicle.metrics.get('soc_percent').values[0];
-            const soh = vehicle.metrics.get('soh').values[0];
-            
-            const batteryCapacity = newBatteryCapacity * (soh/100);
-            
-            const percentUntilFull = Math.max(maxSocPercent - soc, 0);
-            
-            const energyRequired = batteryCapacity * (percentUntilFull/100);
-            const chargeTimeHours = energyRequired / powerInput;
-            const chargeTimeMinutes = Math.round(chargeTimeHours * 60);
-            
-            return [chargeTimeMinutes];
           }
         }
       ]
@@ -225,29 +146,6 @@ module.exports = {
       id: 0x284,
       name: 'ABS Module',
       metrics: [
-        /*
-        {
-          id: 'left_speed',
-          suffix: ' km/h',
-          cooldown: 80,
-          precision: 2,
-          process: (data) => [ ((data[2] << 8) | data[3]) / 208 ],
-        },
-        {
-          id: 'right_speed',
-          suffix: ' km/h',
-          cooldown: 80,
-          precision: 2,
-          process: (data) => [ ((data[0] << 8) | data[1]) / 208 ],
-        },
-        {
-          id: 'rear_speed',
-          suffix: ' km/h',
-          precision: 1,
-          cooldown: 50,
-          process: (data) => [ ((data[4] << 8) | data[5]) / 100 ]
-        },
-        */
         {
           id: 'wheel_speed',
           precision: 2,
@@ -323,6 +221,79 @@ module.exports = {
           process: (data) => [ (data[4] & 0xF8) / 8 ]
         }
       ]
+    }
+  ],
+  extraMetrics: [
+    {
+      id: 'range',
+      suffix: 'km',
+      dependencies: ['soc_gids'],
+      process: (data, vehicle) => {
+        const gids = vehicle.metrics.get('soc_gids').values[0];
+        
+        // Range Calculation
+        // - Division is to convert Wh to kWh
+        // - Minus 1.15kWh is reserved energy that cannot be used.
+        let energyKwh = ((gids*whPerGid)/1000.0)-1.15;
+        if (energyKwh < 0) energyKwh = 0;
+
+        const range = Math.round(energyKwh*kmPerKwh);
+        return [range];
+      }
+    },
+    {
+      id: 'range_at_last_charge',
+      suffix: 'km',
+      dependencies: ['plugged_in', 'gear'],
+      process: (data, vehicle, currentValues) => {
+        const pluggedIn = vehicle.metrics.get('plugged_in').values[0] == 1;
+        if (pluggedIn) return [0];
+
+        const parked = vehicle.metrics.get('gear').values[0] <= 1;
+        if (parked) return null;
+
+        const range = vehicle.metrics.get('range').values[0];
+        if (currentValues[0] == 0) return [range];
+      }
+    },
+    {
+      id: 'charge_status',
+      dependencies: ['plugged_in', 'power_output'],
+      process: (data, vehicle, currentValues) => {
+        const pluggedIn = vehicle.metrics.get('plugged_in').values[0] == 1;
+        if (!pluggedIn) return [0];
+
+        const powerInput = -vehicle.metrics.get('power_output').values[0];
+
+        if (powerInput >= 1) return [1];
+        else if (powerInput <= 0 && currentValues[0] == 1) return [2];
+      }
+    },
+    {
+      id: 'remaining_charge_time',
+      suffix: 'minutes',
+      dependencies: ['charge_status', 'power_output', 'soc_percent', 'soh'],
+      cooldown: 5000,
+      process: (data, vehicle) => {
+        const charging = vehicle.metrics.get('charge_status').values[0] == 1;
+        if (!charging) return [0];
+        
+        const powerInput = -vehicle.metrics.get('power_output').lerpedValues[0];
+        if (powerInput <= 0) return [0];
+
+        const soc = vehicle.metrics.get('soc_percent').values[0];
+        const soh = vehicle.metrics.get('soh').values[0];
+        
+        const batteryCapacity = newBatteryCapacity * (soh/100);
+        
+        const percentUntilFull = Math.max(maxSocPercent - soc, 0);
+        
+        const energyRequired = batteryCapacity * (percentUntilFull/100);
+        const chargeTimeHours = energyRequired / powerInput;
+        const chargeTimeMinutes = Math.round(chargeTimeHours * 60);
+        
+        return [chargeTimeMinutes];
+      }
     }
   ]
 }

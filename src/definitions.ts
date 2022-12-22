@@ -9,6 +9,7 @@ export interface VehicleDefinition {
   name?: string,
   getStatus?: (metrics: Map<string, Metric>) => VehicleStatus,
   topics?: TopicDefinition[];
+  extraMetrics?: MetricDefinition[];
 }
 
 interface VehicleStatus {
@@ -29,6 +30,13 @@ export interface MetricDefinition {
   id: string,
   suffix?: string,
   defaultValues?: number[]
+
+  /**
+   * A list of metric IDs that will cause the process method to be called whenever the
+   * values of any of them change. This is most useful for extra metrics that derive their
+   * values from other metrics.
+   */
+  dependencies?: string[]
 
   /**
    * The minimum time in milliseconds allowed between setting the value of

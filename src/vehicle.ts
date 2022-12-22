@@ -60,8 +60,21 @@ export default class Vehicle extends EventEmitter {
         logger.info("vehicle", `${metric.definition.id}: ${values}`)
       }
       
-      if (metric.definition.onChange && !this.tripManager.playing) {
-        metric.definition.onChange(values, this);
+      if (!this.tripManager.playing) {
+        if (metric.definition.onChange) {
+          metric.definition.onChange(values, this);
+        }
+
+        for (let otherMetric of this.metrics.values()) {
+          let dependencies = otherMetric.definition.dependencies;
+  
+          if (!dependencies) continue;
+          if (!dependencies.includes(metric.definition.id)) continue;
+  
+          otherMetric.update(
+            otherMetric.definition.process(null, this, otherMetric.values)
+          );
+        }
       }
       
       this.tripManager.addEntry(metric);
@@ -104,6 +117,12 @@ export default class Vehicle extends EventEmitter {
 
     for (const topicDef of definition.topics) {
       for (const metricDef of topicDef.metrics) {
+        this.registerMetric( new Metric(metricDef) );
+      }
+    }
+    
+    if (definition.extraMetrics) {
+      for (const metricDef of definition.extraMetrics) {
         this.registerMetric( new Metric(metricDef) );
       }
     }
