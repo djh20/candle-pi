@@ -5,13 +5,13 @@ const newBatteryCapacity = 24;
 const maxSocPercent = 95;
 
 module.exports = {
-  name: 'Nissan Leaf 2011 (ZE0)',
+  name: "Nissan Leaf 2011 (ZE0)",
   getStatus: (metrics) => {
     // This function is called by the application periodically to get information about the vehicle.
 
     // Currently, the application only calls this to see if you're moving (for the gps).
     // If you're not using a gps or don't have this information, you should just return {moving:true}.
-    const speedMetric = metrics.get('wheel_speed');
+    const speedMetric = metrics.get("wheel_speed");
 
     return {
       // Check that at least one value in the wheel_speed metric is above 0.
@@ -21,14 +21,14 @@ module.exports = {
   topics: [
     {
       id: 0x11a,
-      name: 'Shift Controller',
+      name: "Shift Controller",
       metrics: [
         {
-          id: 'gear',
+          id: "gear",
           process: (data) => [ (data[0] & 0xF0) >> 4 ]
         },
         {
-          id: 'powered',
+          id: "powered",
           process: (data) => [ (data[1] & 0x40) >> 6 ],
           onChange: (state, vehicle) => {
             if (state[0] == 1) {
@@ -39,17 +39,17 @@ module.exports = {
           }
         },
         {
-          id: 'eco',
+          id: "eco",
           process: (data) => [ (data[1] & 0x10) >> 4 ],
         }
       ]
     },
     {
       id: 0x5bc,
-      name: 'Lithium Battery Controller (500ms)',
+      name: "Lithium Battery Controller (500ms)",
       metrics: [
         {
-          id: 'soc_gids',
+          id: "soc_gids",
           process: (data) => {
             const gids = (data[0] << 2) | (data[1] >> 6);
             
@@ -60,20 +60,20 @@ module.exports = {
           }
         },
         {
-          id: 'soh',
-          suffix: '%',
+          id: "soh",
+          suffix: "%",
           process: (data) => [ (data[4] & 0xFE) >> 1 ] 
         },
       ]
     },
     {
       id: 0x1db,
-      name: 'Lithium Battery Controller (10ms)',
+      name: "Lithium Battery Controller (10ms)",
       metrics: [
         {
-          id: 'power_output',
+          id: "power_output",
           cooldown: 80,
-          suffix: ' kW',
+          suffix: " kW",
           precision: 2,
           lerp: true,
           process: (data) => {
@@ -103,11 +103,11 @@ module.exports = {
     },
     {
       id: 0x55b,
-      name: 'Lithium Battery Controller (10ms)',
+      name: "Lithium Battery Controller (10ms)",
       metrics: [
         {
-          id: 'soc_percent',
-          suffix: '%',
+          id: "soc_percent",
+          suffix: "%",
           process: (data) => {
             return [ ((data[0] << 2) | (data[1] >> 6)) / 10.0 ];
           }
@@ -116,10 +116,10 @@ module.exports = {
     },
     {
       id: 0x1d4,
-      name: 'Vehicle Control Module (10ms)',
+      name: "Vehicle Control Module (10ms)",
       metrics: [
         {
-          id: 'plugged_in',
+          id: "plugged_in",
           process: (data, vehicle) => {
             const val = (data[6] & 0xE0);
             const pluggedIn = val == 192 || val == 224 ? 1 : 0;
@@ -128,7 +128,7 @@ module.exports = {
           onChange: (state, vehicle) => {
             // Reset gps distance when car is plugged in.
             if (state[0] == 1) {
-              const tripDistance = vehicle.metrics.get('gps_distance');
+              const tripDistance = vehicle.metrics.get("gps_distance");
               if (tripDistance) tripDistance.setState([0]);
             }
           }
@@ -137,10 +137,10 @@ module.exports = {
     },
     {
       id: 0x284,
-      name: 'ABS Module',
+      name: "ABS Module",
       metrics: [
         {
-          id: 'wheel_speed',
+          id: "wheel_speed",
           precision: 2,
           cooldown: 100,
           defaultState: [0, 0, 0],
@@ -154,10 +154,10 @@ module.exports = {
     },
     {
       id: 0x5C0,
-      name: 'Lithium Battery Controller (500ms)',
+      name: "Lithium Battery Controller (500ms)",
       metrics: [
         {
-          id: 'battery_temp',
+          id: "battery_temp",
           process: (data) => {
             // Battery Temperature as reported by the LBC. Effectively has only
             // 7-bit precision, as the bottom bit is always 0.
@@ -170,17 +170,17 @@ module.exports = {
     },
     {
       id: 0x55a,
-      name: 'Inverter (100ms)',
+      name: "Inverter (100ms)",
       metrics: [
         {
-          id: 'motor_temp',
-          suffix: '°C',
+          id: "motor_temp",
+          suffix: "°C",
           precision: 2,
           process: (data) => [ (5.0 / 9.0) * (data[1] - 32) ],
         },
         {
-          id: 'inverter_temp',
-          suffix: '°C',
+          id: "inverter_temp",
+          suffix: "°C",
           precision: 2,
           process: (data) => [ (5.0 / 9.0) * (data[2] - 32) ],
         }
@@ -188,11 +188,11 @@ module.exports = {
     },
     {
       id: 0x54c,
-      name: 'AC Auto Amp (100ms)',
+      name: "AC Auto Amp (100ms)",
       metrics: [
         {
-          id: 'ambient_temp',
-          suffix: '°C',
+          id: "ambient_temp",
+          suffix: "°C",
           process: (data) => {
             // if the byte is 11111111, then the temperature is invalid.
             if (data[6] == 0xff) return null;
@@ -203,10 +203,10 @@ module.exports = {
     },
     {
       id: 0x54b,
-      name: 'AC Auto Amp (100ms)',
+      name: "AC Auto Amp (100ms)",
       metrics: [
         {
-          id: 'cc_fan_speed',
+          id: "cc_fan_speed",
           timeout: 1000,
           process: (data) => [ (data[4] & 0xF8) / 8 ]
         }
@@ -215,11 +215,11 @@ module.exports = {
   ],
   extraMetrics: [
     {
-      id: 'range',
-      suffix: 'km',
-      dependencies: ['soc_gids'],
+      id: "range",
+      suffix: "km",
+      dependencies: ["soc_gids"],
       process: (data, vehicle) => {
-        const gids = vehicle.metrics.get('soc_gids').state[0];
+        const gids = vehicle.metrics.get("soc_gids").state[0];
         
         // Range Calculation
         // - Division is to convert Wh to kWh
@@ -232,47 +232,47 @@ module.exports = {
       }
     },
     {
-      id: 'range_at_last_charge',
-      suffix: 'km',
-      dependencies: ['plugged_in', 'gear'],
+      id: "range_at_last_charge",
+      suffix: "km",
+      dependencies: ["plugged_in", "gear"],
       process: (data, vehicle, currentState) => {
-        const pluggedIn = vehicle.metrics.get('plugged_in').state[0] == 1;
+        const pluggedIn = vehicle.metrics.get("plugged_in").state[0] == 1;
         if (pluggedIn) return [0];
 
-        const parked = vehicle.metrics.get('gear').state[0] <= 1;
+        const parked = vehicle.metrics.get("gear").state[0] <= 1;
         if (parked) return null;
 
-        const range = vehicle.metrics.get('range').state[0];
+        const range = vehicle.metrics.get("range").state[0];
         if (currentState[0] == 0) return [range];
       }
     },
     {
-      id: 'charge_status',
-      dependencies: ['plugged_in', 'power_output'],
+      id: "charge_status",
+      dependencies: ["plugged_in", "power_output"],
       process: (data, vehicle, currentState) => {
-        const pluggedIn = vehicle.metrics.get('plugged_in').state[0] == 1;
+        const pluggedIn = vehicle.metrics.get("plugged_in").state[0] == 1;
         if (!pluggedIn) return [0];
 
-        const powerInput = -vehicle.metrics.get('power_output').state[0];
+        const powerInput = -vehicle.metrics.get("power_output").state[0];
 
         if (powerInput >= 1) return [1];
         else if (powerInput <= 0 && currentState[0] == 1) return [2];
       }
     },
     {
-      id: 'remaining_charge_time',
-      suffix: 'minutes',
-      dependencies: ['charge_status', 'power_output', 'soc_percent', 'soh'],
+      id: "remaining_charge_time",
+      suffix: "minutes",
+      dependencies: ["charge_status", "power_output", "soc_percent", "soh"],
       cooldown: 5000,
       process: (data, vehicle) => {
-        const charging = vehicle.metrics.get('charge_status').state[0] == 1;
+        const charging = vehicle.metrics.get("charge_status").state[0] == 1;
         if (!charging) return [0];
         
-        const powerInput = -vehicle.metrics.get('power_output').lerpedState[0];
+        const powerInput = -vehicle.metrics.get("power_output").lerpedState[0];
         if (powerInput <= 0) return [0];
 
-        const soc = vehicle.metrics.get('soc_percent').state[0];
-        const soh = vehicle.metrics.get('soh').state[0];
+        const soc = vehicle.metrics.get("soc_percent").state[0];
+        const soh = vehicle.metrics.get("soh").state[0];
         
         const batteryCapacity = newBatteryCapacity * (soh/100);
         

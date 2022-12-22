@@ -24,11 +24,11 @@ export default class GpsManager extends EventEmitter {
     return new Promise((resolve) => {
       let socket = new SerialPort(port, {baudRate: 9600}, (err) => {
         if (!err) {
-          logger.info('gps', `Connected to ${port}`);
+          logger.info("gps", `Connected to ${port}`);
           this.connected = true;
           resolve(true);
         } else {
-          logger.warn('gps', `Failed to connect to ${port}`);
+          logger.warn("gps", `Failed to connect to ${port}`);
           this.connected = false;
           resolve(false);
         }
@@ -39,7 +39,7 @@ export default class GpsManager extends EventEmitter {
   }
 
   public listen() {
-    let parser = this.socket.pipe(new parsers.Readline({ delimiter: '\r\n' }));
+    let parser = this.socket.pipe(new parsers.Readline({ delimiter: "\r\n" }));
 
     parser.on("data", data => {
       try {

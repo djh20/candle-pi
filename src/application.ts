@@ -1,5 +1,5 @@
 import * as path from "path";
-import express from 'express';
+import express from "express";
 import { Server as HttpServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 
@@ -89,15 +89,15 @@ export default class Application {
     // Serve files in the 'web' directory.
     this.expressApp.use(express.static(this.paths.web));
 
-    this.expressApp.get('/api/log', (req, res) => {
+    this.expressApp.get("/api/log", (req, res) => {
       res.send(logger.history);
     });
 
-    this.expressApp.get('/api/vehicle/definition', (req, res) => {
+    this.expressApp.get("/api/vehicle/definition", (req, res) => {
       res.send(this.vehicle.definition);
     });
 
-    this.expressApp.get('/api/vehicle/metrics', (req, res) => {
+    this.expressApp.get("/api/vehicle/metrics", (req, res) => {
       let body = {};
       this.vehicle.metrics.forEach((metric) => {
         body[metric.definition.id] = metric.state;
@@ -112,12 +112,12 @@ export default class Application {
 
   private async runCommand(command: string) {
     try {
-      const split = command.split(' ');
+      const split = command.split(" ");
       const topic = split[0];
       const args = split.slice(1);
       if (topic == "trip") {
         if (args[0] == "name") {
-          await this.vehicle.tripManager.setFilePath(this.paths.recordings, args[1] + '.log');
+          await this.vehicle.tripManager.setFilePath(this.paths.recordings, args[1] + ".log");
 
         } else if (args[0] == "end") {
           this.vehicle.tripManager.endTrip();
@@ -137,13 +137,13 @@ export default class Application {
 
           } else if (args[1] == "log") {
             const timePosition = this.vehicle.tripManager.rFile.timePosition;
-            logger.info('trip', `Playback is at ${timePosition}ms`);
+            logger.info("trip", `Playback is at ${timePosition}ms`);
           }
         }
       } else if (topic == "metric") {
         if (args[0] == "set") {
           const metric = this.vehicle.metrics.get(args[1]);
-          const state = args[2].split(',').map(e => parseFloat(e));
+          const state = args[2].split(",").map(e => parseFloat(e));
 
           if (metric) metric.setState(state, true);
         }

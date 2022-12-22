@@ -31,7 +31,7 @@ export default class TripManager {
     await this.setFilePath(vehicle.app.paths.recordings, `${timeMs}.log`);
 
     const metricsArray = Array.from(vehicle.metrics.values());
-    const metricsHeader = metricsArray.map(m => m.definition.id).join(',');
+    const metricsHeader = metricsArray.map(m => m.definition.id).join(",");
 
     this.rFile.write(`${timeMs}\n${metricsHeader}\n`);
     this.recording = true;
@@ -45,7 +45,7 @@ export default class TripManager {
 
   public async setFilePath(directoryPath: string, fileName: string) {
     const fullPath = path.resolve(directoryPath, fileName);
-    logger.info('trip', `File set to ${fileName}`);
+    logger.info("trip", `File set to ${fileName}`);
     
     // If a file is already loaded then close any streams and set the file
     // property to null.
@@ -154,20 +154,20 @@ class RecordingFile {
       let metricIds: string[] = [];
       let latestMetricData: number[][] = [];
   
-      lineReader.on('line', (line) => {
+      lineReader.on("line", (line) => {
         if (i == 0) {
           this.startTime = parseInt(line);
         } else if (i == 1) {
-          metricIds = line.split(',');
+          metricIds = line.split(",");
         } else {
           if (this.keyframes.length >= MAX_LOADED_KEYFRAMES) return;
 
-          const segments = line.split(' ');
+          const segments = line.split(" ");
           const timeOffset = parseInt(segments[0]);
           
           const metricIndex = parseInt(segments[1]);
           
-          const data = segments[2].split(',').map(e => parseFloat(e));
+          const data = segments[2].split(",").map(e => parseFloat(e));
           
           if (timeOffset >= this.timePosition) {
             this.keyframes.push({
@@ -182,7 +182,7 @@ class RecordingFile {
         i++;
       });
 
-      lineReader.on('close', () => {
+      lineReader.on("close", () => {
         // If we didn't get any more keyframes then go back to the start (loop).
         if (this.keyframes.length == 0) {
           this.timePosition = 0;
@@ -230,7 +230,7 @@ class RecordingFile {
 
   private writeBuffer() {
     if (!this.wStream) {
-      this.wStream = fs.createWriteStream(this.path, {flags: 'a'});
+      this.wStream = fs.createWriteStream(this.path, {flags: "a"});
     }
 
     this.wStream.write(this.wBuffer);

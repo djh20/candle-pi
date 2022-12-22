@@ -17,7 +17,7 @@ sendButton.addEventListener("click", (e) => {
 });
 
 commandInput.addEventListener("keyup", (e) => {
-  if (e.key == 'Enter') {
+  if (e.key == "Enter") {
     sendCommand();
   }
 });
