@@ -72,8 +72,9 @@ module.exports = {
       metrics: [
         {
           id: "power_output",
-          cooldown: 80,
           suffix: " kW",
+          cooldown: 80,
+          timeout: 1000,
           precision: 2,
           lerp: true,
           process: (data) => {
