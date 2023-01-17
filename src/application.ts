@@ -89,10 +89,6 @@ export default class Application {
     // Serve files in the 'web' directory.
     this.expressApp.use(express.static(this.paths.web));
 
-    this.expressApp.get("/api/log", (req, res) => {
-      res.send(logger.history);
-    });
-
     this.expressApp.get("/api/vehicle/definition", (req, res) => {
       res.send(this.vehicle.definition);
     });
