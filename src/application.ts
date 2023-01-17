@@ -107,6 +107,7 @@ export default class Application {
   }
 
   private async runCommand(command: string) {
+    logger.info("http", `Executing command: ${command}`);
     try {
       const split = command.split(" ");
       const topic = split[0];
