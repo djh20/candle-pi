@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import { MetricDefinition } from "./definitions";
 import { arraysEqual, getArrayAverage } from "./util/array";
 import { clamp, lerp } from "./util/math";
+import Vehicle from "./vehicle";
 
 export default class Metric extends EventEmitter {
   public index: number;
@@ -32,8 +33,27 @@ export default class Metric extends EventEmitter {
     this.lastChangeTime = 0;
     if (shouldNotify) this.notify();
   }
+
+  /**
+   * Processes the given data and updates the metric's state accordingly. This call will
+   * be ignored if the metric is in the cooldown period.
+   * 
+   * @returns A boolean indicating whether the metric successfully updated.
+   */
+  public update(data: Buffer, vehicle: Vehicle): boolean {
+    if (this.definition.cooldown) {
+      let timeSinceLastChange = Date.now() - this.lastChangeTime;
+      if (timeSinceLastChange < this.definition.cooldown) return false;
+    }
+
+    this.setState(
+      this.definition.process(data, vehicle, this.state)
+    );
+
+    return true;
+  }
   
-  public setState(newState: number[], force?: boolean) {
+  public setState(newState: number[], noTimeout?: boolean) {
     // Sometimes null is returned from process functions in the definition file.
     // This happens when the data cannot be processed, so we just keep the current state.
     if (newState == null) return;
@@ -60,7 +80,7 @@ export default class Metric extends EventEmitter {
       }
     }
 
-    if (this.definition.timeout && !force) {
+    if (this.definition.timeout && !noTimeout) {
       if (this.timeoutTimer) {
         clearTimeout(this.timeoutTimer);
       }
@@ -77,11 +97,6 @@ export default class Metric extends EventEmitter {
     const changed = !arraysEqual(this.state, newState);
 
     if (changed) {
-      if (this.definition.cooldown && !force) {
-        let timeSinceLastChange = Date.now() - this.lastChangeTime;
-        if (timeSinceLastChange < this.definition.cooldown) return;
-      }
-
       this.lastChangeTime = Date.now();
       this.state = newState;
       this.notify();

@@ -71,9 +71,7 @@ export default class Vehicle extends EventEmitter {
           if (!dependencies) continue;
           if (!dependencies.includes(metric.definition.id)) continue;
   
-          otherMetric.setState(
-            otherMetric.definition.process(null, this, otherMetric.state)
-          );
+          otherMetric.update(null, this);
         }
       }
       
@@ -93,7 +91,7 @@ export default class Vehicle extends EventEmitter {
     topicDef.metrics.forEach(metricDef => {
       const metric = this.metrics.get(metricDef.id);
       if (metricDef.process) {
-        metric.setState(metricDef.process(frame.data, this, metric.state));
+        metric.update(frame.data, this);
       }
     });
   }
