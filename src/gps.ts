@@ -49,7 +49,7 @@ export default class GpsManager extends EventEmitter {
       };
     });
 
-    setInterval(() => this.update(), 3000);
+    setInterval(() => this.update(), 1000);
     this.update();
   }
 
