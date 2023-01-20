@@ -25,3 +25,8 @@ Disclaimer: This is a work in progress.
 
 const app = new Application(config)
 app.start();
+
+process.on("SIGTERM", () => {
+  const powered = app.vehicle.metrics.get("powered");
+  if (powered && powered.state[0] == 0) process.exit();
+});
